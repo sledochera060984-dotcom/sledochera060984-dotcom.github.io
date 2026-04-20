@@ -658,7 +658,6 @@
       outline: none;
     }
 
-
     .fav-list-pair {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -799,7 +798,6 @@
     body.dict-searching #list .actions { margin-top: 8px; gap: 6px; }
     body.dict-searching #list .actions .btn { min-height: 34px; padding: 7px 8px; font-size: 12px; }
 
-
     .home-guide {
       margin: 2px 0 10px;
       border: 1px solid #e2e8f0;
@@ -874,7 +872,6 @@
     body.dict-searching .support-box {
       display: none !important;
     }
-
 
     .toast {
       display: none;
@@ -1085,8 +1082,6 @@
 body.dict-searching .reading-box {
   display: none !important;
 }
-
-
 
 /* Restore compact logged-in header */
 body.logged-in-compact .auth-row,
@@ -1914,59 +1909,19 @@ body.dict-searching .reading-box {
     return stems;
   }
 
-  // ОБНОВЛЕННАЯ ЛОГИКА ОЗВУЧКИ
-  let ttsUnlocked = false;
-  let cachedArabicVoice = null;
-
-  function stopTtsPlayback() {
-    try { window.speechSynthesis.cancel(); } catch (_) {}
-  }
-
-  function getArabicVoice() {
-    try {
-      const voices = window.speechSynthesis.getVoices() || [];
-      if (!voices.length) return null;
-      return (
-        voices.find(v => /^ar(-|$)/i.test(v.lang || '') && /google|arabic|العربية/i.test(v.name || '')) ||
-        voices.find(v => /^ar(-|$)/i.test(v.lang || '')) ||
-        voices.find(v => /arabic|العربية/i.test(v.name || '')) ||
-        null
-      );
-    } catch (_) { return null; }
-  }
-
-  function unlockTts() {
-    if (ttsUnlocked) return;
-    ttsUnlocked = true;
-    try {
-        if (window.speechSynthesis.state === 'paused') {
-            window.speechSynthesis.resume();
-        }
-        // Тихий вызов для инициализации аудиоконтекста на смартфонах
-        const utterance = new SpeechSynthesisUtterance('');
-        utterance.volume = 0;
-        window.speechSynthesis.speak(utterance);
-    } catch (_) {}
-  }
-
-  // Привязываем разблокировку аудио к первому клику/касанию
-  document.addEventListener('click', unlockTts, { passive: true, once: true });
-  document.addEventListener('touchstart', unlockTts, { passive: true, once: true });
-
-  try {
-    if ('speechSynthesis' in window) {
-      cachedArabicVoice = getArabicVoice();
-      window.speechSynthesis.onvoiceschanged = function() {
-        cachedArabicVoice = getArabicVoice();
-      };
-    }
-  } catch (_) {}
-
+  // ==========================================
+  // СУПЕР-УСТОЙЧИВАЯ ВЕРСИЯ ОЗВУЧКИ
+  // ==========================================
+  
   function speak(text, e) {
-    if (e) e.stopPropagation();
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
     
-    // Проверка доступа (если хотите тестить без премиума, закомментируйте строку ниже)
-    if (!canUsePremiumFeatures()) { showActivationPrompt(); return; }
+    // ВРЕМЕННО ОТКЛЮЧИЛ БЛОКИРОВКУ ПРЕМИУМА ЧТОБЫ ВЫ МОГЛИ ПРОТЕСТИРОВАТЬ!
+    // Раскомментируйте нижнюю строку, если хотите вернуть проверку прав:
+    // if (!canUsePremiumFeatures()) { showActivationPrompt(); return; }
 
     const cleanText = String(text || '').trim();
     if (!cleanText) {
@@ -1974,42 +1929,42 @@ body.dict-searching .reading-box {
       return;
     }
 
-    unlockTts();
-    stopTtsPlayback();
-
-    const hasSpeechApi =
-      typeof window !== 'undefined' &&
-      'speechSynthesis' in window &&
-      typeof SpeechSynthesisUtterance !== 'undefined';
-
-    if (!hasSpeechApi) {
-      showMsg('Ваш браузер не поддерживает встроенную озвучку');
+    if (!('speechSynthesis' in window)) {
+      showMsg('Браузер не поддерживает озвучку');
       return;
     }
 
     try {
+      // 1. Очищаем зависшую очередь (исправляет баг Android)
+      window.speechSynthesis.cancel();
+
+      // 2. Создаем команду
       const utterance = new SpeechSynthesisUtterance(cleanText);
-      const voice = cachedArabicVoice || getArabicVoice();
-      cachedArabicVoice = voice || cachedArabicVoice;
-
-      utterance.lang = voice && voice.lang ? voice.lang : 'ar-SA';
-      if (voice) utterance.voice = voice;
-
-      utterance.rate = 0.9;
-      utterance.pitch = 1.0;
+      utterance.lang = 'ar-SA'; // Принудительно арабский
+      utterance.rate = 0.85; // Немного замедляем для четкости
       utterance.volume = 1.0;
 
+      // 3. Пытаемся найти встроенный голос
+      const voices = window.speechSynthesis.getVoices();
+      if (voices && voices.length > 0) {
+          const arVoice = voices.find(v => v.lang.startsWith('ar') || /arabic|العربية/i.test(v.name));
+          if (arVoice) {
+              utterance.voice = arVoice;
+          }
+      }
+
       utterance.onerror = function(err) {
-        console.error('Speech synthesis error:', err);
+          console.error('TTS Error:', err);
       };
 
-      window.speechSynthesis.cancel();
+      // 4. Воспроизводим
       window.speechSynthesis.speak(utterance);
     } catch (err) {
-      console.error('Speak error:', err);
-      showMsg('Ошибка воспроизведения');
+      console.error('Ошибка синтезатора:', err);
+      showMsg('Ошибка запуска звука');
     }
   }
+
 
   function getFavoriteByWord(w) {
     const id = makeFavId(w.ar, w.ru);
@@ -4125,8 +4080,8 @@ body.dict-searching .reading-box {
 })();
 </script>
 
-
 </body>
 </html>
+
 
 
