@@ -1,10 +1,8 @@
 [{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "io.github.sledochera060984_dotcom.twa",
-    "sha256_cert_fingerprints": [
-      "3E:FF:D8:4C:9C:88:35:B0:0A:C9:32:A0:F6:4E:4B:97:90:D7:35:F0:2E:D2:03:3C:C7:80:40:C9:3C:BF:F3:E4"
-    ]
-  }
-}]
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.sledochera060984_dotcom.twa",
+        "sha256_cert_fingerprints": ["17:31:2E:89:8D:2B:8A:EA:50:19:65:38:6A:16:63:C7:05:66:24:9D:99:81:74:78:22:0F:31:2A:F1:E1:8B:CD"]
+      }
+    }]
