@@ -1907,12 +1907,11 @@ body.dict-searching .reading-box {
     return stems;
   }
 
-
   // =========================================================================
-  // НАДЕЖНАЯ ОЗВУЧКА (Системная для ПК/iOS, Google gtx API для Android)
+  // БРОНЕБОЙНАЯ ОЗВУЧКА ДЛЯ PLAY MARKET (ANDROID TWA/WEBVIEW) И IOS
   // =========================================================================
   
-  let currentAudio = null; // Глобальная переменная для управления аудио
+  let globalTtsAudio = document.createElement('audio');
 
   function speak(text, e) {
     if (e) {
@@ -1920,7 +1919,7 @@ body.dict-searching .reading-box {
       e.stopPropagation();
     }
     
-    // ПРОВЕРКА ПРЕМИУМА ВКЛЮЧЕНА
+    // Проверка доступа включена!
     if (!canUsePremiumFeatures()) { showActivationPrompt(); return; }
 
     const cleanText = String(text || '').trim();
@@ -1929,58 +1928,81 @@ body.dict-searching .reading-box {
       return;
     }
 
-    // Останавливаем предыдущее аудио, если оно еще играет
-    if (currentAudio) {
-      currentAudio.pause();
-      currentAudio = null;
-    }
+    // Останавливаем все предыдущие процессы озвучки
     try { window.speechSynthesis.cancel(); } catch(_) {}
+    if (globalTtsAudio) {
+      globalTtsAudio.pause();
+      globalTtsAudio.src = '';
+    }
 
-    // Функция, которая надежно скачивает звук напрямую через Google Translate API (обход блокировок)
-    const playGoogleCloud = () => {
-      // ИСПОЛЬЗУЕТСЯ CLIENT=GTX - он не блокируется Гуглом в отличие от tw-ob
-      const url = 'https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=ar&q=' + encodeURIComponent(cleanText);
-      currentAudio = new Audio(url);
-      currentAudio.play().catch(err => {
-        console.error('Audio play error:', err);
-        showMsg('Ошибка загрузки звука. Проверьте интернет.');
+    // 1. Формируем URL облачного API от Google
+    // Используем googleapis.com (а не google.com) + client=gtx (шлюз расширений)
+    const fallbackUrl = 'https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=ar&q=' + encodeURIComponent(cleanText);
+
+    // Функция, которая запускает облачный голос
+    const playFallback = () => {
+      globalTtsAudio = document.createElement('audio');
+      // ВАЖНО: скрываем Referer, чтобы Google не блокировал запросы из сторонних приложений
+      globalTtsAudio.referrerPolicy = 'no-referrer'; 
+      globalTtsAudio.crossOrigin = 'anonymous';
+      globalTtsAudio.src = fallbackUrl;
+      globalTtsAudio.play().catch(err => {
+        console.error("Audio error:", err);
+        showMsg("Ошибка загрузки звука. Проверьте интернет.");
       });
     };
 
-    // Для Android ВСЕГДА используем облачный Google TTS. 
-    // Причина: системный синтезатор Chrome часто не имеет арабского языка и просто "молчит".
-    const isAndroid = /Android/i.test(navigator.userAgent);
-    
-    if (isAndroid) {
-      playGoogleCloud();
-      return;
-    }
-
-    // Для iOS, Mac и Windows пробуем использовать встроенный системный голос
+    // 2. Пытаемся использовать встроенный голос устройства (он быстрее и работает офлайн)
     if ('speechSynthesis' in window) {
-      setTimeout(() => {
-        try {
-          const utterance = new SpeechSynthesisUtterance(cleanText);
-          utterance.lang = 'ar-SA';
-          utterance.rate = 0.85; // чуть медленнее для четкости
-          
-          const voices = window.speechSynthesis.getVoices();
-          const arVoice = voices.find(v => v.lang.startsWith('ar') || /arabic|العربية/i.test(v.name));
-          if (arVoice) utterance.voice = arVoice;
+      let speechStarted = false;
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.lang = 'ar-SA';
+      utterance.rate = 0.85;
 
-          // Если системный голос сломался (например, нет пакета) - скачиваем из интернета
-          utterance.onerror = () => playGoogleCloud(); 
-          
-          window.speechSynthesis.speak(utterance);
-        } catch(e) {
-          playGoogleCloud();
+      const voices = window.speechSynthesis.getVoices() || [];
+      const arVoice = voices.find(v => v.lang.startsWith('ar') || /arabic|العربية/i.test(v.name));
+      if (arVoice) utterance.voice = arVoice;
+
+      utterance.onstart = () => { speechStarted = true; };
+      utterance.onerror = () => {
+        // Если системный голос выдал ошибку, запускаем облачный
+        if (!speechStarted) playFallback();
+      };
+
+      window.speechSynthesis.speak(utterance);
+
+      // 3. АНТИ-БАГ ANDROID WEBVIEW
+      // Если системный голос не издал ни звука за 600 мс (часто бывает, если язык не скачан), 
+      // мы отменяем "зависший" нативный процесс и принудительно запускаем звук через интернет.
+      setTimeout(() => {
+        if (!speechStarted) {
+          window.speechSynthesis.cancel();
+          playFallback();
         }
-      }, 50); // небольшая задержка спасает от зависания движка
+      }, 600);
+      
     } else {
-      // Если браузер вообще древний
-      playGoogleCloud();
+      // Если браузер очень старый и не поддерживает speechSynthesis
+      playFallback();
     }
   }
+
+  // Снятие блокировки автовоспроизведения аудио (нужно для iOS и Android PWA)
+  let audioUnlocked = false;
+  function unlockAudioEngine() {
+    if (audioUnlocked) return;
+    audioUnlocked = true;
+    try {
+      if (window.speechSynthesis.state === 'paused') window.speechSynthesis.resume();
+      const u = new SpeechSynthesisUtterance('');
+      u.volume = 0;
+      window.speechSynthesis.speak(u);
+      // "Пустой" звук для разблокировки HTML5 Audio
+      globalTtsAudio.play().catch(()=>{});
+    } catch(e) {}
+  }
+  document.addEventListener('click', unlockAudioEngine, { once: true, passive: true });
+  document.addEventListener('touchstart', unlockAudioEngine, { once: true, passive: true });
 
   // =========================================================================
 
