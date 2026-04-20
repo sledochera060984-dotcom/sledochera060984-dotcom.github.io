@@ -302,7 +302,6 @@
       white-space: pre-wrap;
     }
 
-    /* Полный перевод при раскрытии */
     .full-translation {
       font-size: 14.5px;
       line-height: 1.55;
@@ -312,7 +311,6 @@
       word-break: break-word;
     }
 
-    /* Полный перевод в Избранном */
     .full-translation-fav {
       font-size: 14.5px;
       line-height: 1.55;
@@ -1909,19 +1907,21 @@ body.dict-searching .reading-box {
     return stems;
   }
 
-  // ==========================================
-  // СУПЕР-УСТОЙЧИВАЯ ВЕРСИЯ ОЗВУЧКИ
-  // ==========================================
+
+  // =========================================================================
+  // НАДЕЖНАЯ ОЗВУЧКА (Системная для ПК/iOS, Google gtx API для Android)
+  // =========================================================================
   
+  let currentAudio = null; // Глобальная переменная для управления аудио
+
   function speak(text, e) {
     if (e) {
-        e.preventDefault();
-        e.stopPropagation();
+      e.preventDefault();
+      e.stopPropagation();
     }
     
-    // ВРЕМЕННО ОТКЛЮЧИЛ БЛОКИРОВКУ ПРЕМИУМА ЧТОБЫ ВЫ МОГЛИ ПРОТЕСТИРОВАТЬ!
-    // Раскомментируйте нижнюю строку, если хотите вернуть проверку прав:
-    // if (!canUsePremiumFeatures()) { showActivationPrompt(); return; }
+    // ПРОВЕРКА ПРЕМИУМА ВКЛЮЧЕНА
+    if (!canUsePremiumFeatures()) { showActivationPrompt(); return; }
 
     const cleanText = String(text || '').trim();
     if (!cleanText) {
@@ -1929,41 +1929,60 @@ body.dict-searching .reading-box {
       return;
     }
 
-    if (!('speechSynthesis' in window)) {
-      showMsg('Браузер не поддерживает озвучку');
+    // Останавливаем предыдущее аудио, если оно еще играет
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio = null;
+    }
+    try { window.speechSynthesis.cancel(); } catch(_) {}
+
+    // Функция, которая надежно скачивает звук напрямую через Google Translate API (обход блокировок)
+    const playGoogleCloud = () => {
+      // ИСПОЛЬЗУЕТСЯ CLIENT=GTX - он не блокируется Гуглом в отличие от tw-ob
+      const url = 'https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=ar&q=' + encodeURIComponent(cleanText);
+      currentAudio = new Audio(url);
+      currentAudio.play().catch(err => {
+        console.error('Audio play error:', err);
+        showMsg('Ошибка загрузки звука. Проверьте интернет.');
+      });
+    };
+
+    // Для Android ВСЕГДА используем облачный Google TTS. 
+    // Причина: системный синтезатор Chrome часто не имеет арабского языка и просто "молчит".
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    
+    if (isAndroid) {
+      playGoogleCloud();
       return;
     }
 
-    try {
-      // 1. Очищаем зависшую очередь (исправляет баг Android)
-      window.speechSynthesis.cancel();
-
-      // 2. Создаем команду
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.lang = 'ar-SA'; // Принудительно арабский
-      utterance.rate = 0.85; // Немного замедляем для четкости
-      utterance.volume = 1.0;
-
-      // 3. Пытаемся найти встроенный голос
-      const voices = window.speechSynthesis.getVoices();
-      if (voices && voices.length > 0) {
+    // Для iOS, Mac и Windows пробуем использовать встроенный системный голос
+    if ('speechSynthesis' in window) {
+      setTimeout(() => {
+        try {
+          const utterance = new SpeechSynthesisUtterance(cleanText);
+          utterance.lang = 'ar-SA';
+          utterance.rate = 0.85; // чуть медленнее для четкости
+          
+          const voices = window.speechSynthesis.getVoices();
           const arVoice = voices.find(v => v.lang.startsWith('ar') || /arabic|العربية/i.test(v.name));
-          if (arVoice) {
-              utterance.voice = arVoice;
-          }
-      }
+          if (arVoice) utterance.voice = arVoice;
 
-      utterance.onerror = function(err) {
-          console.error('TTS Error:', err);
-      };
-
-      // 4. Воспроизводим
-      window.speechSynthesis.speak(utterance);
-    } catch (err) {
-      console.error('Ошибка синтезатора:', err);
-      showMsg('Ошибка запуска звука');
+          // Если системный голос сломался (например, нет пакета) - скачиваем из интернета
+          utterance.onerror = () => playGoogleCloud(); 
+          
+          window.speechSynthesis.speak(utterance);
+        } catch(e) {
+          playGoogleCloud();
+        }
+      }, 50); // небольшая задержка спасает от зависания движка
+    } else {
+      // Если браузер вообще древний
+      playGoogleCloud();
     }
   }
+
+  // =========================================================================
 
 
   function getFavoriteByWord(w) {
