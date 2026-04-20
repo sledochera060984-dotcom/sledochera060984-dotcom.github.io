@@ -1251,7 +1251,7 @@ body.dict-searching .reading-box {
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js', { scope: './' }).catch(() => {});
+      navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {});
     });
   }
 
@@ -1951,6 +1951,11 @@ body.dict-searching .reading-box {
     try { window.speechSynthesis.resume(); } catch (_) {}
   }
 
+  function isAndroidChrome() {
+    const ua = navigator.userAgent || '';
+    return /Android/i.test(ua) && /Chrome|CriOS/i.test(ua) && !/EdgA|SamsungBrowser|OPR/i.test(ua);
+  }
+
   document.addEventListener('click', unlockTts, { passive: true });
   document.addEventListener('touchstart', unlockTts, { passive: true });
 
@@ -1965,19 +1970,39 @@ body.dict-searching .reading-box {
 
   function playGoogleTtsFallback(text) {
     try {
-      const encoded = encodeURIComponent(String(text || '').trim());
+      const cleanText = String(text || '').trim();
+      if (!cleanText) {
+        showMsg('Нет текста для озвучки');
+        return;
+      }
+
+      stopTtsPlayback();
+
+      const encoded = encodeURIComponent(cleanText);
       const url = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ar&q=' + encoded;
-      currentTtsAudio = new Audio(url);
-      currentTtsAudio.preload = 'auto';
-      currentTtsAudio.onended = function() { currentTtsAudio = null; };
-      currentTtsAudio.onerror = function() {
-        currentTtsAudio = null;
+
+      const audio = new Audio();
+      currentTtsAudio = audio;
+      audio.preload = 'auto';
+      audio.src = url;
+
+      audio.onended = function() {
+        if (currentTtsAudio === audio) currentTtsAudio = null;
+      };
+
+      audio.onerror = function() {
+        if (currentTtsAudio === audio) currentTtsAudio = null;
         showMsg('Озвучка недоступна');
       };
-      currentTtsAudio.play().catch(function() {
-        currentTtsAudio = null;
-        showMsg('Озвучка не запустилась');
-      });
+
+      const playPromise = audio.play();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(function(err) {
+          console.error('Audio play error:', err);
+          if (currentTtsAudio === audio) currentTtsAudio = null;
+          showMsg('Озвучка не запустилась');
+        });
+      }
     } catch (e) {
       console.error('Google TTS fallback error:', e);
       showMsg('Озвучка недоступна');
@@ -1987,58 +2012,53 @@ body.dict-searching .reading-box {
   function speak(text, e) {
     if (e) e.stopPropagation();
     if (!canUsePremiumFeatures()) { showActivationPrompt(); return; }
+
     const cleanText = String(text || '').trim();
-    if (!cleanText) { showMsg('Нет текста для озвучки'); return; }
+    if (!cleanText) {
+      showMsg('Нет текста для озвучки');
+      return;
+    }
 
     unlockTts();
     stopTtsPlayback();
 
-    const hasSpeechApi = typeof window !== 'undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
-    if (!hasSpeechApi) { playGoogleTtsFallback(cleanText); return; }
-
-    let usedFallback = false;
-    function useFallbackOnce() {
-      if (usedFallback) return;
-      usedFallback = true;
-      try { window.speechSynthesis.cancel(); } catch (_) {}
+    if (isAndroidChrome()) {
       playGoogleTtsFallback(cleanText);
+      return;
+    }
+
+    const hasSpeechApi =
+      typeof window !== 'undefined' &&
+      'speechSynthesis' in window &&
+      typeof SpeechSynthesisUtterance !== 'undefined';
+
+    if (!hasSpeechApi) {
+      playGoogleTtsFallback(cleanText);
+      return;
     }
 
     try {
       const utterance = new SpeechSynthesisUtterance(cleanText);
       const voice = cachedArabicVoice || getArabicVoice();
       cachedArabicVoice = voice || cachedArabicVoice;
+
       utterance.lang = voice && voice.lang ? voice.lang : 'ar-SA';
       if (voice) utterance.voice = voice;
+
       utterance.rate = 0.9;
       utterance.pitch = 1.0;
       utterance.volume = 1.0;
 
-      const fallbackTimer = setTimeout(function() {
-        const speaking = !!window.speechSynthesis.speaking;
-        const pending = !!window.speechSynthesis.pending;
-        if (!speaking && !pending) useFallbackOnce();
-      }, 700);
-
-      utterance.onstart = function() { clearTimeout(fallbackTimer); };
-      utterance.onend = function() { clearTimeout(fallbackTimer); };
       utterance.onerror = function(err) {
-        clearTimeout(fallbackTimer);
         console.error('Speech synthesis error:', err);
-        useFallbackOnce();
+        showMsg('Системная озвучка недоступна');
       };
 
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(utterance);
-
-      setTimeout(function() {
-        const speaking = !!window.speechSynthesis.speaking;
-        const pending = !!window.speechSynthesis.pending;
-        if (!speaking && !pending) useFallbackOnce();
-      }, 250);
     } catch (err) {
       console.error('Speak error:', err);
-      useFallbackOnce();
+      playGoogleTtsFallback(cleanText);
     }
   }
 
