@@ -1,0 +1,4162 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#27ae60">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.png">
+  <title>АРАБРУС</title>
+
+  <script>
+    (function () {
+      try {
+        if (localStorage.getItem('arabrus_logged_in') === '1') {
+          document.documentElement.classList.add('prelogged-in-compact');
+        }
+      } catch (_) {}
+    })();
+  </script>
+
+  <meta name="application-name" content="АРАБРУС">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="АРАБРУС">
+  <link rel="icon" href="icon.png" sizes="192x192">
+
+  <script src="base.js"></script>
+  <script src="verbs.js"></script>
+
+  <style>
+    :root {
+      --primary: #27ae60;
+      --bg: #f8fafc;
+      --text: #1e293b;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --warn: #b45309;
+      --danger: #dc2626;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, system-ui, sans-serif;
+      padding: env(safe-area-inset-top) 12px 40px 12px;
+    }
+    .app {
+      max-width: 700px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 22px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+      min-height: 80vh;
+      padding: 16px;
+    }
+    .header {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .header img {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(39,174,96,0.2);
+    }
+    .header h1 {
+      margin: 0;
+      color: var(--primary);
+      font-size: 24px;
+      font-weight: 800;
+    }
+    .status {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      background: #fff;
+    }
+    .status.ok { background: #ecfdf5; border-color: #a7f3d0; color: #059669; }
+    .status.wait { background: #fffbeb; border-color: #fde68a; color: var(--warn); }
+    .status.err { background: #fef2f2; border-color: #fecaca; color: var(--danger); }
+    html.prelogged-in-compact body .auth-row,
+    html.prelogged-in-compact body #status,
+    html.prelogged-in-compact body #syncIndicator,
+    html.prelogged-in-compact body #trialIndicator,
+    html.prelogged-in-compact body #userLine {
+      display: none !important;
+    }
+    #syncIndicator {
+      transition: opacity .2s ease;
+    }
+    #trialIndicator {
+      transition: opacity .2s ease;
+      cursor: pointer;
+    }
+    #trialIndicator:hover {
+      filter: brightness(0.98);
+    }
+    .lock-card {
+      border: 1px dashed #cbd5e1;
+      border-radius: 18px;
+      background: #fff;
+      padding: 18px 16px;
+      text-align: center;
+      color: var(--text);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+    .lock-card .lock-icon {
+      font-size: 36px;
+      margin-bottom: 8px;
+    }
+    .lock-card .lock-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: #0f172a;
+    }
+    .lock-card .lock-text {
+      font-size: 14px;
+      line-height: 1.45;
+      color: var(--muted);
+      margin-bottom: 12px;
+      white-space: pre-wrap;
+    }
+    .btn.locked {
+      opacity: 0.92;
+    }
+    .auth-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .btn, .auth-btn, .tab, .chip {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .auth-btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 14px;
+    }
+    .tabs {
+      display: flex;
+      gap: 6px;
+      background: #f1f5f9;
+      border-radius: 14px;
+      padding: 4px;
+      margin-bottom: 14px;
+    }
+    .tab {
+      flex: 1;
+      padding: 10px 8px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .tab.active {
+      background: #fff;
+      color: var(--primary);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .search, .field, textarea {
+      width: 100%;
+      border: 2px solid #f1f5f9;
+      border-radius: 14px;
+      padding: 14px 16px;
+      font-size: 16px;
+      outline: none;
+      background: #fff;
+      margin-bottom: 10px;
+    }
+    .search:focus, .field:focus, textarea:focus {
+      border-color: var(--primary);
+    }
+    textarea {
+      resize: none;
+      min-height: 100px;
+    }
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .toolbar .btn {
+      flex: 1;
+      padding: 11px 10px;
+      font-size: 13px;
+    }
+    .btn.primary {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    .btn.warn {
+      background: #fffbeb;
+      color: var(--warn);
+      border-color: #fde68a;
+    }
+    .btn.danger {
+      background: #fef2f2;
+      color: var(--danger);
+      border-color: #fecaca;
+    }
+    .chips {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 10px;
+      margin-bottom: 6px;
+    }
+    .chips::-webkit-scrollbar { display: none; }
+
+    .chip {
+      white-space: nowrap;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #475569;
+      background: #e2e8f0; 
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .chip.active {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
+    }
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 26px 10px;
+      font-size: 14px;
+    }
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-bottom: 60px;
+    }
+    .item {
+      border: 1px solid #eef2f7;
+      border-radius: 16px;
+      padding: 14px;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+    .item.collapsible { cursor: pointer; }
+    .item-details {
+      display: none;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px dashed #e2e8f0;
+    }
+    .item.expanded .item-details { display: block; }
+    .item-head {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+    .item-left {
+      flex: 1;
+      min-width: 0;
+    }
+    .ru {
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.45;
+      color: #334155;
+      margin-bottom: 6px;
+      white-space: pre-wrap;
+    }
+    .ar {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--primary);
+      direction: rtl;
+      line-height: 1.25;
+      word-break: break-word;
+      text-align: right;
+    }
+    .hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+      white-space: pre-wrap;
+    }
+
+    /* Полный перевод при раскрытии */
+    .full-translation {
+      font-size: 14.5px;
+      line-height: 1.55;
+      color: #334155;
+      margin-bottom: 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Полный перевод в Избранном */
+    .full-translation-fav {
+      font-size: 14.5px;
+      line-height: 1.55;
+      color: #334155;
+      margin-bottom: 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .fav-color-blue {
+      background: #eff6ff;
+      border-color: #93c5fd;
+      box-shadow: 0 2px 10px rgba(59,130,246,0.08);
+    }
+    .fav-color-red {
+      background: #fef2f2;
+      border-color: #fca5a5;
+      box-shadow: 0 2px 10px rgba(239,68,68,0.08);
+    }
+    .card-item.fav-color-blue .card-face {
+      background: #eff6ff;
+    }
+    .card-item.fav-color-red .card-face {
+      background: #fef2f2;
+    }
+    .fav-color-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+      margin-top: 4px;
+      box-shadow: 0 0 0 3px rgba(148,163,184,0.12);
+    }
+    .fav-color-dot.blue {
+      background: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.14);
+    }
+    .fav-color-dot.red {
+      background: #dc2626;
+      box-shadow: 0 0 0 3px rgba(220,38,38,0.14);
+    }
+    .mark-color-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .mark-color-actions .btn {
+      flex: 1;
+      min-width: 120px;
+    }
+    .mark-color-preview {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      background: #fff;
+      margin-bottom: 12px;
+    }
+    .mark-color-preview-text {
+      min-width: 0;
+      font-size: 14px;
+      line-height: 1.4;
+      color: #334155;
+      word-break: break-word;
+    }
+
+    .fav-press-target {
+      touch-action: pan-y;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+    .fav-press-target .btn,
+    .fav-press-target input,
+    .fav-press-target textarea,
+    .fav-press-target select {
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .actions .btn {
+      flex: 1;
+      min-width: 110px;
+      padding: 10px 8px;
+      font-size: 13px;
+    }
+    .verb-box {
+      background: #f1f5f9;
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-top: 10px;
+      margin-bottom: 2px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      font-size: 14px;
+      color: #475569;
+    }
+    .verb-box span {
+      direction: rtl;
+      color: var(--primary);
+      font-size: 20px;
+      font-weight: 800;
+    }
+    .section-note {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 10px;
+      line-height: 1.45;
+    }
+    .fav-topbar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .fav-topbar .btn { flex: 1; min-width: 120px; }
+    .fav-filter-menu {
+      display: none;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 10px 28px rgba(15,23,42,0.08);
+      padding: 8px;
+      margin: -2px 0 10px;
+    }
+    .fav-filter-menu.active { display: block; }
+    .fav-filter-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .fav-filter-option {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      background: #f8fafc;
+      color: #334155;
+      padding: 11px 12px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      text-align: left;
+    }
+    .fav-filter-option.active {
+      border-color: var(--primary);
+      background: #ecfdf5;
+      color: #166534;
+      box-shadow: 0 4px 12px rgba(39,174,96,0.12);
+    }
+    .fav-filter-option-left {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .fav-filter-trigger {
+      position: relative;
+    }
+    .fav-filter-trigger::after {
+      content: '▾';
+      margin-left: 8px;
+      font-size: 12px;
+      opacity: 0.7;
+    }
+    .fav-filter-trigger.primary::after {
+      opacity: 1;
+    }
+    .fav-filter-option-count {
+      min-width: 26px;
+      text-align: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #fff;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 800;
+      border: 1px solid #e2e8f0;
+    }
+    .fav-filter-option.active .fav-filter-option-count {
+      border-color: #bbf7d0;
+      color: #166534;
+    }
+    .fav-searchbar {
+      display: none;
+      margin-bottom: 10px;
+    }
+    .fav-searchbar .fav-search-input {
+      width: 100%;
+      margin-bottom: 0;
+      padding: 12px 14px;
+      font-size: 15px;
+    }
+    .selection-panel {
+      display: none;
+      background: #0f172a;
+      color: #fff;
+      border-radius: 16px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .selection-panel.active { display: block; }
+    .selection-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .selection-actions .btn {
+      border: none;
+      background: rgba(255,255,255,0.14);
+      color: #fff;
+      min-width: 120px;
+    }
+    .selection-actions .btn.danger {
+      background: #dc2626;
+    }
+    .select-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .select-box {
+      width: 22px;
+      height: 22px;
+      accent-color: var(--primary);
+      flex: 0 0 auto;
+    }
+    .cards-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding-bottom: 30px;
+    }
+    .card-item {
+      min-height: 180px;
+      border: 1px solid #eef2f7;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+      position: relative;
+      perspective: 1000px;
+      cursor: pointer;
+    }
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 180px;
+      transition: transform .55s ease;
+      transform-style: preserve-3d;
+    }
+    .card-item.flipped .card-inner { transform: rotateY(180deg); }
+    .card-face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+    }
+    .card-back {
+      transform: rotateY(180deg);
+      background: #f8fafc;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    .card-star {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      color: #f59e0b;
+      font-size: 18px;
+      font-weight: 900;
+      z-index: 2;
+    }
+    .card-checkbox {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 3;
+      width: 22px;
+      height: 22px;
+      accent-color: var(--primary);
+    }
+    .card-front-text {
+      margin: auto;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 800;
+      line-height: 1.35;
+      color: #334155;
+      white-space: pre-wrap;
+    }
+    .card-front-ar {
+      margin: auto;
+      text-align: center;
+      direction: rtl;
+      color: var(--primary);
+      font-size: 30px;
+      font-weight: 800;
+      line-height: 1.2;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .card-hint {
+      text-align: center;
+      color: #94a3b8;
+      font-size: 11px;
+      font-weight: 800;
+      margin-top: auto;
+      text-transform: uppercase;
+    }
+    .card-back .ar {
+      text-align: center;
+      font-size: 30px;
+    }
+    .folder-select {
+      width: 100%;
+      border: 2px solid #f1f5f9;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 15px;
+      margin-bottom: 10px;
+      background: #fff;
+      outline: none;
+    }
+
+
+    .fav-list-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      width: 100%;
+      align-items: start;
+    }
+    .fav-list-col {
+      min-width: 0;
+    }
+    .fav-list-col.ru-col {
+      text-align: left;
+    }
+    .fav-list-col.ar-col {
+      text-align: right;
+    }
+    .fav-list-col .ru {
+      margin-bottom: 0;
+    }
+    .fav-list-col .ar {
+      margin-bottom: 0;
+    }
+
+    .note-topbar { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+    .note-topbar .btn { flex:1; min-width:140px; }
+    .note-selection-panel {
+      display:none;
+      background:#0f172a;
+      color:#fff;
+      border-radius:16px;
+      padding:12px;
+      margin-bottom:12px;
+    }
+    .note-selection-panel.active { display:block; }
+
+    /* Компактный режим для вкладки Избранное */
+    body.compact-favs .header { margin-bottom: 6px; }
+    body.compact-favs .header img { width: 34px; height: 34px; border-radius: 8px; }
+    body.compact-favs .header h1 { font-size: 18px; }
+    body.compact-favs .status { padding: 8px 10px; font-size: 12px; margin-bottom: 6px; border-radius: 12px; }
+    body.compact-favs .user-line { display: none; }
+    body.compact-favs .auth-row { margin-bottom: 8px; }
+    body.compact-favs .auth-btn { padding: 9px 12px; font-size: 13px; min-height: 40px; }
+    body.compact-favs .tabs { margin-bottom: 8px; padding: 3px; gap: 4px; }
+    body.compact-favs .tab { padding: 8px 6px; font-size: 12px; }
+    body.compact-favs .chips { margin-bottom: 6px; padding-bottom: 6px; }
+    body.compact-favs .chip { padding: 6px 10px; font-size: 12px; }
+    body.compact-favs #favTopbar { gap: 6px; margin-bottom: 6px; }
+    body.compact-favs #favTopbar .btn { min-height: 36px; min-width: 110px; padding: 8px 10px; font-size: 12px; }
+    body.compact-favs #favFilterMenu { margin-bottom: 8px; padding: 10px; border-radius: 12px; }
+    body.compact-favs .fav-filter-title { font-size: 11px; margin-bottom: 6px; }
+    body.compact-favs .fav-filter-summary { font-size: 12px; margin-bottom: 6px; }
+    body.compact-favs .fav-filter-options { gap: 6px; }
+    body.compact-favs .fav-filter-option { padding: 9px 10px; font-size: 13px; border-radius: 12px; }
+    body.compact-favs .fav-filter-option-count { font-size: 11px; padding: 2px 7px; }
+    body.compact-favs #favSearchBar { margin-bottom: 8px; }
+    body.compact-favs #favSearchBar .fav-search-input { padding: 10px 12px; font-size: 14px; border-radius: 12px; }
+    body.compact-favs #favFilterMenu { padding: 6px; margin-top: -2px; }
+    body.compact-favs .fav-filter-option { padding: 8px 10px; font-size: 13px; }
+    body.compact-favs #selectionPanel { padding: 10px; margin-bottom: 8px; border-radius: 12px; }
+    body.compact-favs #selectionPanel .folder-select,
+    body.compact-favs #selectionPanel .field { margin-bottom: 8px; padding: 10px 12px; font-size: 14px; }
+    body.compact-favs #selectionPanel .selection-actions .btn { min-height: 34px; padding: 7px 10px; font-size: 12px; }
+    body.compact-favs #list { gap: 6px; padding-bottom: 16px; }
+    body.compact-favs #list .item { padding: 9px 10px; border-radius: 12px; }
+    body.compact-favs #list .item-head { gap: 8px; }
+
+    body.compact-favs .fav-list-pair {
+      gap: 10px;
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    }
+
+    body.compact-favs #list .ru { font-size: 15px; line-height: 1.22; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+    body.compact-favs #list .ar { font-size: 22px; line-height: 1.0; }
+    body.compact-favs #list .hint { font-size: 11px; line-height: 1.2; margin-top: 2px; }
+    body.compact-favs #list .full-translation-fav { font-size: 14px; line-height: 1.5; margin-bottom: 10px; }
+    body.compact-favs #list .item-details { margin-top: 8px; padding-top: 8px; }
+    body.compact-favs #list .actions { margin-top: 8px; gap: 6px; }
+    body.compact-favs #list .actions .btn { min-height: 34px; padding: 7px 8px; font-size: 12px; }
+
+    .note-topbar { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+    .note-topbar .field { flex: 1; margin-bottom: 0; padding: 10px 12px; font-size: 14px; }
+    .note-topbar .btn { min-width: 130px; min-height: 40px; font-size: 12px; padding: 8px 10px; }
+
+    body.compact-notes .header { margin-bottom: 6px; }
+    body.compact-notes .header img { width: 34px; height: 34px; border-radius: 8px; }
+    body.compact-notes .header h1 { font-size: 18px; }
+    body.compact-notes .status { padding: 8px 10px; font-size: 12px; margin-bottom: 6px; border-radius: 12px; }
+    body.compact-notes .user-line { display: none; }
+    body.compact-notes .auth-row { margin-bottom: 8px; }
+    body.compact-notes .auth-btn { padding: 9px 12px; font-size: 13px; min-height: 40px; }
+    body.compact-notes .tabs { margin-bottom: 8px; padding: 3px; gap: 4px; }
+    body.compact-notes .tab { padding: 8px 6px; font-size: 12px; }
+    body.compact-notes #notesComposer { margin-bottom: 8px; }
+    body.compact-notes #notesComposer .field { margin-bottom: 6px; padding: 10px 12px; font-size: 14px; }
+    body.compact-notes #notesComposer .toolbar { margin-bottom: 6px; }
+    body.compact-notes #notesComposer .btn { min-height: 38px; padding: 8px 10px; font-size: 12px; }
+    body.compact-notes .chips { margin-bottom: 6px; padding-bottom: 6px; }
+    body.compact-notes .chip { padding: 6px 10px; font-size: 12px; }
+    body.compact-notes #noteTopbar { gap: 6px; margin-bottom: 8px; }
+    body.compact-notes #noteSelectionPanel { padding: 10px; margin-bottom: 8px; border-radius: 12px; }
+    body.compact-notes #noteSelectionPanel .folder-select,
+    body.compact-notes #noteSelectionPanel .field { margin-bottom: 8px; padding: 10px 12px; font-size: 14px; }
+    body.compact-notes #noteSelectionPanel .selection-actions .btn { min-height: 34px; padding: 7px 10px; font-size: 12px; }
+    body.compact-notes #list { gap: 6px; padding-bottom: 16px; }
+    body.compact-notes #list .item { padding: 9px 10px; border-radius: 12px; }
+    body.compact-notes .note-preview-ru { font-size: 15px; line-height: 1.22; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+    body.compact-notes .note-preview-ar { font-size: 20px; line-height: 1.0; direction: rtl; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+    body.compact-notes #list .item-details { margin-top: 8px; padding-top: 8px; }
+    body.compact-notes #list .actions { margin-top: 8px; gap: 6px; }
+    body.compact-notes #list .actions .btn { min-height: 34px; padding: 7px 8px; font-size: 12px; }
+
+    .note-item.expanded .item-head { display: none; }
+
+    /* Компактный режим при поиске в словаре */
+    body.dict-searching .header,
+    body.dict-searching #status,
+    body.dict-searching #syncIndicator,
+    body.dict-searching #trialIndicator,
+    body.dict-searching .user-line,
+    body.dict-searching .auth-row {
+      display: none;
+    }
+    body.dict-searching .app { padding-top: 10px; }
+    body.dict-searching .tabs { margin-bottom: 8px; padding: 3px; gap: 4px; position: sticky; top: 0; z-index: 20; background: #f1f5f9; }
+    body.dict-searching .tab { padding: 8px 6px; font-size: 12px; }
+    body.dict-searching #dictSection { margin-bottom: 6px; position: sticky; top: 44px; z-index: 19; background: #fff; padding-bottom: 4px; }
+    body.dict-searching .search { margin-bottom: 6px; padding: 12px 14px; font-size: 15px; border-radius: 12px; }
+    body.dict-searching #list { gap: 6px; padding-bottom: 16px; }
+    body.dict-searching #list .item { padding: 9px 10px; border-radius: 12px; }
+    body.dict-searching #list .item-head { gap: 8px; }
+    body.dict-searching #list .ru { font-size: 15px; line-height: 1.22; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px; }
+    body.dict-searching #list .ar { font-size: 22px; line-height: 1.0; }
+    body.dict-searching #list .hint { font-size: 11px; line-height: 1.2; margin-top: 2px; }
+    body.dict-searching #list .verb-box { margin-top: 8px; padding: 8px 10px; border-radius: 10px; font-size: 12px; }
+    body.dict-searching #list .verb-box span { font-size: 18px; }
+    body.dict-searching #list .item-details { margin-top: 8px; padding-top: 8px; }
+    body.dict-searching #list .actions { margin-top: 8px; gap: 6px; }
+    body.dict-searching #list .actions .btn { min-height: 34px; padding: 7px 8px; font-size: 12px; }
+
+
+    .home-guide {
+      margin: 2px 0 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 4px 16px rgba(15,23,42,0.04);
+      padding: 14px;
+    }
+    .home-guide-title {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .03em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .home-guide-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .home-guide-item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      color: #334155;
+      line-height: 1.45;
+      font-size: 14px;
+    }
+    .support-box {
+      margin: 0 0 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 4px 16px rgba(15,23,42,0.04);
+      padding: 14px;
+    }
+    .support-box-title {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .03em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .support-box-text {
+      color: #334155;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+    .support-box .btn {
+      width: 100%;
+      min-height: 42px;
+    }
+    .home-guide-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      background: #ecfdf5;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      flex: 0 0 auto;
+      margin-top: 1px;
+    }
+    body.dict-searching .home-guide,
+    body.dict-searching .support-box {
+      display: none !important;
+    }
+
+
+    .toast {
+      display: none;
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%);
+      background: #1e293b;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 700;
+      z-index: 9999;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+      white-space: nowrap;
+    }
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,0.56);
+      z-index: 9998;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(4px);
+    }
+    .modal {
+      background: #fff;
+      width: 100%;
+      max-width: 420px;
+      border-radius: 22px;
+      padding: 22px;
+      box-shadow: 0 22px 44px rgba(0,0,0,0.18);
+    }
+    .modal h3 { margin: 0 0 10px; text-align: center; }
+    .modal .ar-preview { font-size: 30px; font-weight: 800; color: var(--primary); direction: rtl; text-align: center; margin-bottom: 14px; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 8px; }
+    .user-line { text-align: center; color: var(--muted); font-size: 12px; margin-bottom: 10px; }
+
+/* Reading */
+.reading-home-note {
+  text-align: center;
+  color: var(--muted);
+  padding: 18px 8px 10px;
+  font-size: 14px;
+}
+.reading-box {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.04);
+  padding: 10px;
+}
+.reading-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.reading-tab {
+  border: 1px solid #dbe3ec;
+  background: #f8fafc;
+  color: #334155;
+  border-radius: 999px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.reading-tab.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(39,174,96,0.22);
+}
+.reading-panel {
+  margin-top: 10px;
+  border: 1px solid #edf2f7;
+  border-radius: 16px;
+  background: #fcfdfd;
+  overflow: hidden;
+}
+.reading-preview {
+  padding: 12px 14px;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.reading-preview-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.reading-preview-line {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--primary);
+  direction: rtl;
+  text-align: right;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.reading-preview-line.preview-ru {
+  font-size: 14px;
+  color: #334155;
+  direction: ltr;
+  text-align: left;
+  font-weight: 700;
+}
+.reading-preview-hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.reading-full {
+  display: none;
+  border-top: 1px dashed #e2e8f0;
+  padding: 12px 14px;
+}
+.reading-full.open { display: block; }
+.reading-placeholder {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.reading-sentence {
+  padding: 10px 0;
+  border-top: 1px dashed #e2e8f0;
+}
+.reading-sentence:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+.reading-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 8px;
+  direction: rtl;
+  align-items: flex-end;
+  line-height: 2.05;
+}
+.reading-token {
+  position: relative;
+  display: inline-flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.reading-ar {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--primary);
+  direction: rtl;
+  line-height: 1.35;
+  text-align: right;
+}
+.reading-token.phrase .reading-ar {
+  padding: 2px 4px;
+  border-radius: 10px;
+  background: rgba(39,174,96,0.06);
+}
+.reading-translation {
+  display: none;
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  min-width: 132px;
+  max-width: 240px;
+  background: #0f172a;
+  color: #fff;
+  border-radius: 14px;
+  padding: 10px;
+  z-index: 50;
+  box-shadow: 0 14px 32px rgba(15,23,42,0.26);
+}
+.reading-token.visible .reading-translation { display: block; }
+.reading-translation-text {
+  font-size: 13px;
+  line-height: 1.42;
+  margin-bottom: 8px;
+  white-space: normal;
+  text-align: left;
+  direction: ltr;
+}
+.reading-translation-actions {
+  display: flex;
+  gap: 6px;
+}
+.reading-translation-actions .btn {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 8px;
+  font-size: 12px;
+}
+body.dict-searching .reading-box {
+  display: none !important;
+}
+
+
+
+/* Restore compact logged-in header */
+body.logged-in-compact .auth-row,
+body.logged-in-compact #syncIndicator,
+body.logged-in-compact #trialIndicator,
+body.logged-in-compact #userLine {
+  display: none !important;
+}
+body.logged-in-compact #status {
+  display: none !important;
+}
+body.logged-in-compact .header {
+  margin-bottom: 8px;
+}
+body.dict-searching .reading-box {
+  display: none !important;
+}
+
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <img src="icon.png" alt="Logo" onerror="this.style.display='none'">
+      <h1>АРАБРУС</h1>
+    </div>
+
+    <div id="status" class="status wait">⏳ Подключение базы...</div>
+    <div id="syncIndicator" class="status wait" style="padding:8px 10px; font-size:12px; margin-bottom:8px;">☁️ Проверка синхронизации...</div>
+    <div id="trialIndicator" class="status wait" style="padding:8px 10px; font-size:12px; margin-bottom:8px;">🎁 Проверка пробного периода...</div>
+    <div id="userLine" class="user-line">Не выполнен вход</div>
+
+    <div class="auth-row">
+      <button id="authBtn" class="auth-btn" onclick="toggleAuth()">🌐 Войти через Google</button>
+    </div>
+
+    <div class="tabs">
+      <button id="tabDict" class="tab active" onclick="switchTab('dict')">📚 Словарь</button>
+      <button id="tabFav" class="tab" onclick="switchTab('fav')">⭐ Избранное</button>
+      <button id="tabNotes" class="tab" onclick="switchTab('notes')">📝 Блокнот</button>
+    </div>
+
+    <div id="dictSection">
+      <input id="queryInput" class="search" type="text" placeholder="Поиск (дверь, باب, قال, يقول)..." oninput="handleDictionaryInput()" autocomplete="off">
+    </div>
+
+    <div id="notesComposer" style="display:none;">
+      <input id="manualAr" class="field" type="text" placeholder="Арабский текст">
+      <input id="manualRu" class="field" type="text" placeholder="Перевод на русский">
+      <div class="toolbar" style="margin-top:6px;">
+        <button class="btn primary" onclick="saveNote()">💾 Сохранить в блокнот</button>
+      </div>
+    </div>
+
+    <div id="chips" class="chips" style="display:none;"></div>
+    <div id="favTopbar" class="fav-topbar" style="display:none;"></div>
+    <div id="favFilterMenu" class="fav-filter-menu" style="display:none;"></div>
+    <div id="favSearchBar" class="fav-searchbar" style="display:none;">
+      <input id="favSearchInput" class="field fav-search-input" type="text" placeholder="Поиск по избранному..." oninput="renderApp()">
+    </div>
+    <div id="noteTopbar" class="note-topbar" style="display:none;">
+      <input id="noteSearchInput" class="field" type="text" placeholder="Поиск по блокноту..." oninput="renderApp()">
+      <button id="noteSelectBtn" class="btn" onclick="toggleNoteSelectionMode()"></button>
+    </div>
+
+    <div id="selectionPanel" class="selection-panel">
+      <div style="font-weight:800;">Выбрано: <span id="selectedFavCount">0</span></div>
+      <select id="bulkFolderSelect" class="folder-select"></select>
+      <input id="bulkFolderInput" class="field" type="text" placeholder="Или введите новую папку">
+      <div class="selection-actions">
+        <button id="bulkAddFolderBtn" class="btn" onclick="applyBulkFolder()">📁 В папку</button>
+        <button id="bulkRemoveFolderBtn" class="btn warn" onclick="removeSelectedFavoritesFromFolder()" style="display:none;">📂 Убрать из папки</button>
+        <button class="btn danger" onclick="deleteSelectedFavorites()">🗑 Удалить</button>
+        <button class="btn" onclick="toggleFavoriteSelectionMode(false)">✖ Завершить</button>
+      </div>
+    </div>
+
+    <div id="noteSelectionPanel" class="note-selection-panel">
+      <div style="font-weight:800;">Выбрано записей: <span id="selectedNoteCount">0</span></div>
+      <select id="bulkNoteFolderSelect" class="folder-select"></select>
+      <input id="bulkNoteFolderInput" class="field" type="text" placeholder="Или введите новую папку">
+      <div class="selection-actions">
+        <button class="btn" onclick="applyBulkNoteFolder()">📁 В папку</button>
+        <button class="btn danger" onclick="deleteSelectedNotes()">🗑 Удалить</button>
+        <button class="btn" onclick="toggleNoteSelectionMode(false)">✖ Завершить</button>
+      </div>
+    </div>
+
+    <div id="list" class="list"></div>
+  </div>
+
+  <div id="favModalWrap" class="modal-overlay">
+    <div class="modal">
+      <h3 id="favModalTitle">В избранное</h3>
+      <div id="favModalAr" class="ar-preview"></div>
+      <input id="favModalRu" class="field" type="text" placeholder="Ваш перевод">
+      <div class="modal-actions">
+        <button class="btn primary" onclick="confirmFavModal()">💾 Сохранить</button>
+        <button class="btn" onclick="closeFavModal()">Отмена</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="noteEditModalWrap" class="modal-overlay">
+    <div class="modal">
+      <h3 id="noteEditModalTitle">Редактировать запись</h3>
+      <input id="noteEditModalArInput" class="field" type="text" placeholder="Арабский текст" dir="rtl" style="text-align:right; font-size:22px; font-weight:800; color: var(--primary);">
+      <input id="noteEditModalRu" class="field" type="text" placeholder="Перевод на русский">
+      <div class="modal-actions">
+        <button class="btn primary" onclick="confirmNoteEditModal()">💾 Сохранить</button>
+        <button class="btn" onclick="closeNoteEditModal()">Отмена</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="folderModalWrap" class="modal-overlay">
+    <div class="modal">
+      <h3>Папка</h3>
+      <div id="folderModalDesc" class="section-note" style="text-align:center; margin-bottom:12px;"></div>
+      <select id="singleFolderSelect" class="folder-select"></select>
+      <input id="folderInput" class="field" type="text" placeholder="Например: Повторить">
+      <div class="modal-actions">
+        <button class="btn primary" onclick="confirmFolderModal()">💾 Сохранить</button>
+        <button class="btn" onclick="closeFolderModal()">Отмена</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="markColorModalWrap" class="modal-overlay">
+    <div class="modal">
+      <h3>Пометка сложности</h3>
+      <div class="section-note" style="text-align:center; margin-bottom:12px;">Удерживайте слово примерно 0.8 сек. При прокрутке меню не откроется.</div>
+      <div class="mark-color-preview">
+        <span id="markColorPreviewDot" class="fav-color-dot" style="background:#cbd5e1; box-shadow:none;"></span>
+        <div id="markColorPreviewText" class="mark-color-preview-text">Выберите цвет для слова</div>
+      </div>
+      <div class="mark-color-actions">
+        <button class="btn primary" style="background:#2563eb; border-color:#2563eb;" onclick="confirmMarkColor('blue')">🔵 Сложное</button>
+        <button class="btn danger" onclick="confirmMarkColor('red')">🔴 Очень сложное</button>
+        <button class="btn warn" onclick="confirmMarkColor('')">⚪ Убрать цвет</button>
+        <button class="btn" onclick="closeMarkColorModal()">Отмена</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модалка для просьбы войти в аккаунт -->
+  <div id="authModalWrap" class="modal-overlay">
+    <div class="modal" style="text-align:center;">
+      <h3 style="margin-bottom: 10px;">Требуется вход</h3>
+      <p style="color: var(--muted); font-size: 14px; margin-bottom: 20px; line-height: 1.4;">
+        Пожалуйста, войдите в аккаунт Google, чтобы слушать озвучку и сохранять слова.
+      </p>
+      <div class="toolbar" style="margin-bottom: 0;">
+        <button class="btn primary" onclick="closeAuthModal(); toggleAuth();">🌐 Войти через Google</button>
+        <button class="btn" onclick="closeAuthModal()">Отмена</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">Сообщение</div>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js', { scope: './' }).catch(() => {});
+    });
+  }
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDDwIWq8VCk-ivjjCJJZoio-wGD2gU1rtE",
+    authDomain: "arabus-dict-96c12.firebaseapp.com",
+    projectId: "arabus-dict-96c12",
+    storageBucket: "arabus-dict-96c12.firebasestorage.app",
+    messagingSenderId: "814248156149",
+    appId: "1:814248156149:web:e2acce197a00eb3ceb5ebc"
+  };
+
+  const CONTACT_EMAIL = 'sledochera060984@gmail.com';
+  const FIREBASE_SDK_URLS = [
+    'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js',
+    'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js',
+    'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js'
+  ];
+
+  let firebaseReady = false;
+  let firebaseLoadingPromise = null;
+  let provider = null;
+  let authStateUnsub = null;
+
+  function makeUnavailableError(message = 'Для входа и синхронизации нужен интернет') {
+    const error = new Error(message);
+    error.code = 'firebase/unavailable';
+    return error;
+  }
+
+  function createOfflineAuthStub() {
+    return {
+      __offlineStub: true,
+      async signOut() { return null; },
+      async signInWithPopup() { throw makeUnavailableError(); },
+      async signInWithRedirect() { throw makeUnavailableError(); },
+      async getRedirectResult() { return null; },
+      onAuthStateChanged(callback) {
+        const timer = setTimeout(() => {
+          try { callback(null); } catch (_) {}
+        }, 0);
+        return () => clearTimeout(timer);
+      }
+    };
+  }
+
+  function createOfflineDbStub() {
+    const emptyDocSnap = { exists: false, data: () => ({}) };
+    const emptyQuerySnap = { docs: [], metadata: { hasPendingWrites: false } };
+
+    const docApi = {
+      async set() { throw makeUnavailableError(); },
+      async update() { throw makeUnavailableError(); },
+      async delete() { throw makeUnavailableError(); },
+      collection() { return collectionApi; },
+      onSnapshot(onNext) {
+        const timer = setTimeout(() => {
+          try { onNext(emptyDocSnap); } catch (_) {}
+        }, 0);
+        return () => clearTimeout(timer);
+      }
+    };
+
+    const collectionApi = {
+      doc() { return docApi; },
+      async add() { throw makeUnavailableError(); },
+      onSnapshot(onNext) {
+        const timer = setTimeout(() => {
+          try { onNext(emptyQuerySnap); } catch (_) {}
+        }, 0);
+        return () => clearTimeout(timer);
+      }
+    };
+
+    return {
+      __offlineStub: true,
+      async enablePersistence() { return true; },
+      collection() { return collectionApi; },
+      batch() {
+        return {
+          set() {},
+          update() {},
+          delete() {},
+          async commit() { throw makeUnavailableError(); }
+        };
+      }
+    };
+  }
+
+  let auth = createOfflineAuthStub();
+  let db = createOfflineDbStub();
+
+  function loadExternalScript(src) {
+    return new Promise((resolve, reject) => {
+      const existing = document.querySelector(`script[data-src="${src}"]`);
+      if (existing) {
+        if (existing.dataset.loaded === '1') {
+          resolve();
+          return;
+        }
+        existing.addEventListener('load', () => resolve(), { once: true });
+        existing.addEventListener('error', () => reject(new Error('Script load failed: ' + src)), { once: true });
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = src;
+      script.async = true;
+      script.defer = true;
+      script.dataset.src = src;
+      script.onload = () => {
+        script.dataset.loaded = '1';
+        resolve();
+      };
+      script.onerror = () => reject(new Error('Script load failed: ' + src));
+      document.head.appendChild(script);
+    });
+  }
+
+  let user = null;
+  let activeTab = 'dict';
+  let activeCollection = 'Все';
+  let toastTimer = null;
+  let currentRenderedWords = [];
+  let normalizedVerbs = {};
+  let reverseVerbsMap = {};
+  let favModalWord = null;
+  let folderModalMode = null;
+  let folderModalTargetId = null;
+  let favorites = [];
+  let notes = [];
+  let userAccess = { premiumActive: false, premiumUntilMs: 0 };
+  let unsubAccess = null;
+  let unsubFavs = null;
+  let unsubNotes = null;
+  let favSnapshotPending = false;
+  let noteSnapshotPending = false;
+  let favSelectionMode = false;
+  let selectedFavoriteIds = new Set();
+  let favViewMode = localStorage.getItem('arabrus_fav_view_mode') || 'list';
+  let favDifficultyFilter = localStorage.getItem('arabrus_fav_difficulty_filter') || 'all';
+  let favFilterMenuOpen = false;
+  let favStudyDirection = localStorage.getItem('arabrus_fav_direction') || 'ru-ar';
+  let noteSelectionMode = false;
+  let selectedNoteIds = new Set();
+  let currentEditingNoteId = null;
+  let currentColorFavoriteId = null;
+  let favoriteLongPressTimer = null;
+  let favoriteLongPressTriggered = false;
+  let favoriteLongPressSuppressUntil = 0;
+  let favoriteLongPressState = {
+    id: null,
+    startX: 0,
+    startY: 0,
+    moved: false
+  };
+
+  const statusEl = document.getElementById('status');
+  const syncIndicatorEl = document.getElementById('syncIndicator');
+  const trialIndicatorEl = document.getElementById('trialIndicator');
+  const listEl = document.getElementById('list');
+  const chipsEl = document.getElementById('chips');
+
+  function showMsg(text) {
+    const t = document.getElementById('toast');
+    t.innerText = text;
+    t.style.display = 'block';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.style.display = 'none', 2600);
+  }
+
+  function setStatus(text, cls) {
+    statusEl.className = 'status ' + cls;
+    statusEl.innerText = text;
+    updateCompactLoginUi();
+  }
+
+
+
+  function updateCompactLoginUi() {
+    const logged = !!user;
+    document.body.classList.toggle('logged-in-compact', logged);
+    try {
+      document.documentElement.classList.toggle('prelogged-in-compact', logged);
+      localStorage.setItem('arabrus_logged_in', logged ? '1' : '0');
+    } catch (_) {}
+    if (statusEl) {
+      statusEl.classList.toggle('compact-hideable', logged);
+      if (logged) statusEl.style.display = 'none';
+      else statusEl.style.display = '';
+    }
+  }
+
+  function clearAllSearchInputs() {
+    ['queryInput', 'favSearchInput', 'noteSearchInput'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+  }
+
+
+  function getFavoriteColorClass(f) {
+    const color = String(f?.markColor || '').trim();
+    if (color === 'blue') return 'fav-color-blue';
+    if (color === 'red') return 'fav-color-red';
+    return '';
+  }
+
+  function getFavoriteColorDot(color) {
+    if (color === 'blue') return '<span class="fav-color-dot blue"></span>';
+    if (color === 'red') return '<span class="fav-color-dot red"></span>';
+    return '';
+  }
+
+  function isFavoriteControlTarget(target) {
+    return !!(target && target.closest('button, input, select, textarea, label, a'));
+  }
+
+  function isReadingControlTarget(target) {
+    return !!(target && target.closest('.reading-translation-actions button, button, input, select, textarea, label, a'));
+  }
+
+  function getEventPoint(event) {
+    const point = (event?.touches && event.touches[0])
+      || (event?.changedTouches && event.changedTouches[0])
+      || event
+      || { clientX: 0, clientY: 0 };
+    return {
+      x: Number(point.clientX || 0),
+      y: Number(point.clientY || 0)
+    };
+  }
+
+  function startFavoriteLongPress(id, event) {
+    if (favSelectionMode) return;
+    if (isFavoriteControlTarget(event?.target)) return;
+
+    favoriteLongPressTriggered = false;
+    clearTimeout(favoriteLongPressTimer);
+
+    const point = getEventPoint(event);
+    favoriteLongPressState = { id, startX: point.x, startY: point.y, moved: false };
+
+    favoriteLongPressTimer = setTimeout(() => {
+      if (!favoriteLongPressState.id || favoriteLongPressState.id !== id || favoriteLongPressState.moved) return;
+      favoriteLongPressTriggered = true;
+      favoriteLongPressSuppressUntil = Date.now() + 900;
+      favoriteLongPressTimer = null;
+      favoriteLongPressState = { id: null, startX: 0, startY: 0, moved: false };
+      openMarkColorModal(id);
+      try { if (navigator.vibrate) navigator.vibrate(30); } catch (_) {}
+    }, 780);
+  }
+
+  function moveFavoriteLongPress(event) {
+    if (!favoriteLongPressState.id) return;
+    const point = getEventPoint(event);
+    const dx = Math.abs(point.x - favoriteLongPressState.startX);
+    const dy = Math.abs(point.y - favoriteLongPressState.startY);
+    if (dx > 14 || dy > 14) {
+      favoriteLongPressState.moved = true;
+      cancelFavoriteLongPress();
+    }
+  }
+
+  function cancelFavoriteLongPress() {
+    clearTimeout(favoriteLongPressTimer);
+    favoriteLongPressTimer = null;
+    favoriteLongPressState = { id: null, startX: 0, startY: 0, moved: false };
+  }
+
+  function handleFavoriteItemPress(action, id, el, event) {
+    if (Date.now() < favoriteLongPressSuppressUntil || favoriteLongPressTriggered) {
+      favoriteLongPressTriggered = false;
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      return false;
+    }
+    if (isFavoriteControlTarget(event?.target)) return false;
+
+    if (action === 'select') {
+      toggleFavoriteSelected(id);
+      return false;
+    }
+    if (action === 'flip' && el) {
+      el.classList.toggle('flipped');
+      return false;
+    }
+    if (action === 'expand' && el) {
+      el.classList.toggle('expanded');
+      return false;
+    }
+    return false;
+  }
+
+  function openMarkColorModal(id) {
+    currentColorFavoriteId = id;
+    const fav = favorites.find(x => x.id === id);
+    const textEl = document.getElementById('markColorPreviewText');
+    const dotEl = document.getElementById('markColorPreviewDot');
+    if (textEl) textEl.textContent = fav ? ((fav.customRu || '') + (fav.ar ? ' — ' + fav.ar : '')) : 'Выберите цвет для слова';
+    if (dotEl) {
+      dotEl.className = 'fav-color-dot';
+      dotEl.style.background = '#cbd5e1';
+      dotEl.style.boxShadow = 'none';
+      if (fav?.markColor === 'blue') {
+        dotEl.className = 'fav-color-dot blue';
+        dotEl.style.background = '';
+        dotEl.style.boxShadow = '';
+      } else if (fav?.markColor === 'red') {
+        dotEl.className = 'fav-color-dot red';
+        dotEl.style.background = '';
+        dotEl.style.boxShadow = '';
+      }
+    }
+    document.getElementById('markColorModalWrap').style.display = 'flex';
+  }
+
+  function closeMarkColorModal() {
+    cancelFavoriteLongPress();
+    currentColorFavoriteId = null;
+    document.getElementById('markColorModalWrap').style.display = 'none';
+  }
+
+  function closeAnyOpenModal() {
+    const modalIds = ['favModalWrap', 'noteEditModalWrap', 'folderModalWrap', 'markColorModalWrap', 'authModalWrap'];
+    for (const id of modalIds) {
+      const el = document.getElementById(id);
+      if (!el || el.style.display !== 'flex') continue;
+      if (id === 'favModalWrap') closeFavModal();
+      else if (id === 'noteEditModalWrap') closeNoteEditModal();
+      else if (id === 'folderModalWrap') closeFolderModal();
+      else if (id === 'markColorModalWrap') closeMarkColorModal();
+      else if (id === 'authModalWrap') closeAuthModal();
+      return true;
+    }
+    return false;
+  }
+
+  function closeExpandedItemsAndScrollTop() {
+    let changed = false;
+    document.querySelectorAll('#list .item.expanded').forEach((el) => {
+      el.classList.remove('expanded');
+      changed = true;
+    });
+    document.querySelectorAll('#list .card-item.flipped').forEach((el) => {
+      el.classList.remove('flipped');
+      changed = true;
+    });
+    if (changed) window.scrollTo({ top: 0, behavior: 'smooth' });
+    return changed;
+  }
+
+  function clearActiveInputs() {
+    let changed = false;
+    if (activeTab === 'dict') {
+      const queryEl = document.getElementById('queryInput');
+      if (queryEl && queryEl.value) {
+        queryEl.value = '';
+        changed = true;
+      }
+    } else if (activeTab === 'fav') {
+      const favSearchEl = document.getElementById('favSearchInput');
+      if (favSearchEl && favSearchEl.value) {
+        favSearchEl.value = '';
+        changed = true;
+      }
+    } else if (activeTab === 'notes') {
+      const noteSearchEl = document.getElementById('noteSearchInput');
+      const manualArEl = document.getElementById('manualAr');
+      const manualRuEl = document.getElementById('manualRu');
+      if (noteSearchEl && noteSearchEl.value) { noteSearchEl.value = ''; changed = true; }
+      if (manualArEl && manualArEl.value) { manualArEl.value = ''; changed = true; }
+      if (manualRuEl && manualRuEl.value) { manualRuEl.value = ''; changed = true; }
+    }
+    if (changed) {
+      renderApp();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    return changed;
+  }
+
+  function closeSelectionModes() {
+    if (favSelectionMode) {
+      toggleFavoriteSelectionMode(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return true;
+    }
+    if (noteSelectionMode) {
+      toggleNoteSelectionMode(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return true;
+    }
+    return false;
+  }
+
+  function goToDictionaryHome() {
+    if (activeTab !== 'dict' || activeCollection !== 'Все') {
+      switchTab('dict');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return true;
+    }
+    return false;
+  }
+
+  function handleAppBackAction() {
+    if (closeAnyOpenModal()) return true;
+    if (closeSelectionModes()) return true;
+    if (closeExpandedItemsAndScrollTop()) return true;
+    if (clearActiveInputs()) return true;
+    if (goToDictionaryHome()) return true;
+    return false;
+  }
+
+  function installBackButtonHandler() {
+    if (window.__arabrusBackHandlerInstalled) return;
+    window.__arabrusBackHandlerInstalled = true;
+    try { history.pushState({ arabrusBackGuard: Date.now() }, ''); } catch (_) {}
+    window.addEventListener('popstate', () => {
+      const handled = handleAppBackAction();
+      if (!handled) return;
+      setTimeout(() => {
+        try { history.pushState({ arabrusBackGuard: Date.now() }, ''); } catch (_) {}
+      }, 0);
+    });
+  }
+
+  async function confirmMarkColor(color) {
+    if (!user) { openAuthModal(); return; }
+    if (!canUsePremiumFeatures()) { showActivationPrompt(); return; }
+    if (!currentColorFavoriteId) { closeMarkColorModal(); return; }
+    try {
+      await db.collection('users').doc(user.uid).collection('favorites').doc(currentColorFavoriteId).update({
+        markColor: color || '',
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      closeMarkColorModal();
+      showMsg(color === 'blue' ? 'Помечено синим' : color === 'red' ? 'Помечено красным' : 'Цвет убран');
+    } catch (e) {
+      console.error(e);
+      showMsg('Ошибка сохранения цвета');
+    }
+  }
+
+  function updateSyncIndicator() {
+    if (!syncIndicatorEl) return;
+    if (!user) {
+      syncIndicatorEl.className = 'status wait';
+      syncIndicatorEl.innerText = firebaseReady
+        ? '☁️ Войдите в Google для синхронизации'
+        : (navigator.onLine
+            ? '☁️ Подключаем вход и синхронизацию...'
+            : '📴 Офлайн: словарь работает, вход и синхронизация появятся при интернете');
+      return;
+    }
+    const hasPending = favSnapshotPending || noteSnapshotPending;
+    if (!navigator.onLine && hasPending) {
+      syncIndicatorEl.className = 'status wait';
+      syncIndicatorEl.innerText = '📴 Нет сети. Изменения сохранены локально и ждут синхронизации';
+      return;
+    }
+    if (!navigator.onLine && !hasPending) {
+      syncIndicatorEl.className = 'status wait';
+      syncIndicatorEl.innerText = '📴 Нет сети. Последние данные доступны локально';
+      return;
+    }
+    if (hasPending) {
+      syncIndicatorEl.className = 'status wait';
+      syncIndicatorEl.innerText = '🔄 Синхронизация с облаком...';
+      return;
+    }
+    syncIndicatorEl.className = 'status ok';
+    syncIndicatorEl.innerText = '✅ Всё сохранено в облаке';
+  }
+
+  function getUserCreatedAtMs() {
+    if (!user?.metadata?.creationTime) return 0;
+    const ms = new Date(user.metadata.creationTime).getTime();
+    return Number.isFinite(ms) ? ms : 0;
+  }
+
+  function hasPaidAccess() {
+    if (!user) return false;
+    if (userAccess?.premiumUntilMs) return Date.now() <= userAccess.premiumUntilMs;
+    if (userAccess?.premiumActive) return true;
+    return false;
+  }
+
+  function getTrialInfo() {
+    if (!user) return { active: false, expired: false, daysLeft: 0, endMs: 0 };
+    const createdAtMs = getUserCreatedAtMs();
+    if (!createdAtMs) return { active: false, expired: false, daysLeft: 0, endMs: 0 };
+    const trialMs = 20 * 24 * 60 * 60 * 1000;
+    const endMs = createdAtMs + trialMs;
+    const remainingMs = endMs - Date.now();
+    const active = remainingMs > 0;
+    const daysLeft = active ? Math.max(1, Math.ceil(remainingMs / (24 * 60 * 60 * 1000))) : 0;
+    return { active, expired: !active, daysLeft, endMs };
+  }
+
+  function canUsePremiumFeatures() {
+    if (!user) return false;
+    if (hasPaidAccess()) return true;
+    return getTrialInfo().active;
+  }
+
+  function isPremiumLocked() {
+    return !!user && !canUsePremiumFeatures();
+  }
+
+  function openAuthModal() {
+    document.getElementById('authModalWrap').style.display = 'flex';
+  }
+
+  function closeAuthModal() {
+    document.getElementById('authModalWrap').style.display = 'none';
+  }
+
+  function openActivationContact() {
+    const subject = encodeURIComponent('Активация доступа Arabus Pro');
+    const body = encodeURIComponent(
+      'Здравствуйте! Хочу активировать доступ к функциям Arabus Pro.\n\n'
+      + 'Мой email: ' + (user?.email || 'не указан') + '\n'
+      + 'UID: ' + (user?.uid || 'не указан') + '\n'
+      + 'Имя: ' + (user?.displayName || 'не указано') + '\n'
+    );
+    try {
+      window.location.href = `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`;
+    } catch (e) {
+      console.error(e);
+      showMsg('Напишите мне для активации: ' + CONTACT_EMAIL);
+    }
+  }
+
+  function openSupportEmail() {
+    const subject = encodeURIComponent('Техническая поддержка АРАБРУС');
+    const body = encodeURIComponent(
+      'Здравствуйте! Нужна помощь по приложению АРАБРУС.\n\n'
+      + 'Опишите проблему здесь:\n\n'
+      + 'Устройство: \n'
+      + 'Что произошло: \n'
+      + 'Как повторить: \n\n'
+      + 'Мой email: ' + (user?.email || 'не указан')
+    );
+    try {
+      window.location.href = `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`;
+    } catch (e) {
+      console.error(e);
+      showMsg('Напишите в поддержку: ' + CONTACT_EMAIL);
+    }
+  }
+
+  function showActivationPrompt() {
+    if (!user) { openAuthModal(); return; }
+    if (hasPaidAccess()) return;
+    openActivationContact();
+  }
+
+  function renderLockedFeature(featureName) {
+    return `
+      <div class="lock-card">
+        <div class="lock-icon">🔒</div>
+        <div class="lock-title">${featureName} доступны по подписке</div>
+        <div class="lock-text">Пробный период 20 дней закончился.
+Напишите мне для активации доступа.
+Стоимость: 100 ₽ в месяц.</div>
+        <button class="btn primary" onclick="openActivationContact()">Напишите мне для активации</button>
+      </div>
+    `;
+  }
+
+  function updateTrialIndicator() {
+    if (!trialIndicatorEl) return;
+    if (!user) {
+      trialIndicatorEl.className = 'status wait';
+      trialIndicatorEl.innerText = '🎁 Войдите в Google — после регистрации начнутся 20 дней бесплатного доступа';
+      return;
+    }
+    if (hasPaidAccess()) {
+      trialIndicatorEl.className = 'status ok';
+      if (userAccess && userAccess.premiumUntilMs) {
+        const d = new Date(userAccess.premiumUntilMs);
+        const day = d.getDate().toString().padStart(2, '0');
+        const month = (d.getMonth() + 1).toString().padStart(2, '0');
+        const year = d.getFullYear();
+        trialIndicatorEl.innerText = `💎 Премиум-доступ активен до ${day}.${month}.${year}`;
+      } else {
+        trialIndicatorEl.innerText = '💎 Премиум-доступ активен';
+      }
+      return;
+    }
+    const trial = getTrialInfo();
+    if (trial.active) {
+      trialIndicatorEl.className = 'status wait';
+      trialIndicatorEl.innerText = `🎁 Бесплатный период активен: осталось ${trial.daysLeft} дн. Нажмите для активации позже`;
+      return;
+    }
+    trialIndicatorEl.className = 'status err';
+    trialIndicatorEl.innerText = '🔒 Пробный период закончился. Нажмите, чтобы написать мне';
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function escapeJs(value) {
+    return String(value ?? '')
+      .replace(/\\/g, '\\\\')
+      .replace(/'/g, "\\'")
+      .replace(/\n/g, '\\n')
+      .replace(/\r/g, '\\r')
+      .replace(/\u2028/g, '\\u2028')
+      .replace(/\u2029/g, '\\u2029');
+  }
+
+  function normalize(t) {
+    if (!t) return '';
+    let res = String(t).toLowerCase()
+      .replace(/[\u064B-\u0652]/g, '')
+      .replace(/[أإآ]/g, 'ا')
+      .trim();
+    if (res.length > 3 && res.startsWith('ال')) res = res.substring(2);
+    return res;
+  }
+
+  function hashString(str) {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h += (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24);
+    }
+    return (h >>> 0).toString(36);
+  }
+
+  function makeFavId(ar, ru) {
+    return 'fav_' + hashString(String(ar).trim() + '||' + String(ru).trim());
+  }
+
+  function makeNoteId(ar, ru, collection = '') {
+    return 'note_' + hashString(String(ar).trim() + '||' + String(ru).trim() + '||' + String(collection).trim());
+  }
+
+  function getArabicStems(word) {
+    if (!word) return [];
+    let stems = [word];
+    let w = word;
+    if (w.startsWith('س') && w.length > 3) w = w.substring(1);
+    if (w.length >= 3 && /^[يتنا]/.test(w)) {
+      let core = w.substring(1);
+      if (core.endsWith('ون') || core.endsWith('ين') || core.endsWith('ان') || core.endsWith('وا') || core.endsWith('ات')) {
+        core = core.substring(0, core.length - 2);
+      }
+      stems.push(core);
+    }
+    if (word.endsWith('وا') || word.endsWith('تم') || word.endsWith('نا')) stems.push(word.substring(0, word.length - 2));
+    if (word.endsWith('ت')) stems.push(word.substring(0, word.length - 1));
+    return stems;
+  }
+
+  let currentTtsAudio = null;
+  let ttsUnlocked = false;
+  let cachedArabicVoice = null;
+
+  function stopTtsPlayback() {
+    try { window.speechSynthesis.cancel(); } catch (_) {}
+    try {
+      if (currentTtsAudio) {
+        currentTtsAudio.pause();
+        currentTtsAudio.currentTime = 0;
+      }
+    } catch (_) {}
+    currentTtsAudio = null;
+  }
+
+  function getArabicVoice() {
+    try {
+      const voices = window.speechSynthesis.getVoices() || [];
+      if (!voices.length) return null;
+      return (
+        voices.find(v => /^ar(-|$)/i.test(v.lang || '') && /google|arabic|العربية/i.test(v.name || '')) ||
+        voices.find(v => /^ar(-|$)/i.test(v.lang || '')) ||
+        voices.find(v => /arabic|العربية/i.test(v.name || '')) ||
+        null
+      );
+    } catch (_) { return null; }
+  }
+
+  function unlockTts() {
+    if (ttsUnlocked) return;
+    ttsUnlocked = true;
+    try { window.speechSynthesis.resume(); } catch (_) {}
+  }
+
+  document.addEventListener('click', unlockTts, { passive: true });
+  document.addEventListener('touchstart', unlockTts, { passive: true });
+
+  try {
+    if ('speechSynthesis' in window) {
+      cachedArabicVoice = getArabicVoice();
+      window.speechSynthesis.onvoiceschanged = function() {
+        cachedArabicVoice = getArabicVoice();
+      };
+    }
+  } catch (_) {}
+
+  function playGoogleTtsFallback(text) {
+    try {
+      const encoded = encodeURIComponent(String(text || '').trim());
+      const url = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ar&q=' + encoded;
+      currentTtsAudio = new Audio(url);
+      currentTtsAudio.preload = 'auto';
+      currentTtsAudio.onended = function() { currentTtsAudio = null; };
+      currentTtsAudio.onerror = function() {
+        currentTtsAudio = null;
+        showMsg('Озвучка недоступна');
+      };
+      currentTtsAudio.play().catch(function() {
+        currentTtsAudio = null;
+        showMsg('Озвучка не запустилась');
+      });
+    } catch (e) {
+      console.error('Google TTS fallback error:', e);
+      showMsg('Озвучка недоступна');
+    }
+  }
+
+  function speak(text, e) {
+    if (e) e.stopPropagation();
+    if (!canUsePremiumFeatures()) { showActivationPrompt(); return; }
+    const cleanText = String(text || '').trim();
+    if (!cleanText) { showMsg('Нет текста для озвучки'); return; }
+
+    unlockTts();
+    stopTtsPlayback();
+
+    const hasSpeechApi = typeof window !== 'undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
+    if (!hasSpeechApi) { playGoogleTtsFallback(cleanText); return; }
+
+    let usedFallback = false;
+    function useFallbackOnce() {
+      if (usedFallback) return;
+      usedFallback = true;
+      try { window.speechSynthesis.cancel(); } catch (_) {}
+      playGoogleTtsFallback(cleanText);
+    }
+
+    try {
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      const voice = cachedArabicVoice || getArabicVoice();
+      cachedArabicVoice = voice || cachedArabicVoice;
+      utterance.lang = voice && voice.lang ? voice.lang : 'ar-SA';
+      if (voice) utterance.voice = voice;
+      utterance.rate = 0.9;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+
+      const fallbackTimer = setTimeout(function() {
+        const speaking = !!window.speechSynthesis.speaking;
+        const pending = !!window.speechSynthesis.pending;
+        if (!speaking && !pending) useFallbackOnce();
+      }, 700);
+
+      utterance.onstart = function() { clearTimeout(fallbackTimer); };
+      utterance.onend = function() { clearTimeout(fallbackTimer); };
+      utterance.onerror = function(err) {
+        clearTimeout(fallbackTimer);
+        console.error('Speech synthesis error:', err);
+        useFallbackOnce();
+      };
+
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+
+      setTimeout(function() {
+        const speaking = !!window.speechSynthesis.speaking;
+        const pending = !!window.speechSynthesis.pending;
+        if (!speaking && !pending) useFallbackOnce();
+      }, 250);
+    } catch (err) {
+      console.error('Speak error:', err);
+      useFallbackOnce();
+    }
+  }
+
+  function getFavoriteByWord(w) {
+    const id = makeFavId(w.ar, w.ru);
+    return favorites.find(f => f.id === id) || null;
+  }
+
+  function getCollectionsForFavorites() {
+    const set = new Set(['Все']);
+    favorites.forEach(f => {
+      if (f.collection && String(f.collection).trim()) set.add(String(f.collection).trim());
+    });
+    return Array.from(set);
+  }
+
+  function getCollectionsForNotes() {
+    const set = new Set(['Все']);
+    notes.forEach(n => {
+      if (n.collection && String(n.collection).trim()) set.add(String(n.collection).trim());
+    });
+    return Array.from(set);
+  }
+
+  function getFavoriteDifficultyHint(color) {
+    if (color === 'blue') return '🔵 Сложное';
+    if (color === 'red') return '🔴 Очень сложное';
+    return '';
+  }
+
+  function favoriteMatchesDifficulty(f, filterValue = favDifficultyFilter) {
+    const color = String(f?.markColor || '').trim();
+    if (filterValue === 'blue') return color === 'blue';
+    if (filterValue === 'red') return color === 'red';
+    if (filterValue === 'none') return !color;
+    return true;
+  }
+
+  function getFavoriteDifficultyButtonLabel() {
+    if (favDifficultyFilter === 'blue') return 'Сложные';
+    if (favDifficultyFilter === 'red') return 'Очень сложные';
+    if (favDifficultyFilter === 'none') return 'Без пометки';
+    return 'Все уровни';
+  }
+
+  function getFavoriteDirectionButtonLabel() {
+    return favStudyDirection === 'ar-ru' ? '🔁 AR → RU' : '🔁 RU → AR';
+  }
+
+  function toggleFavoriteStudyDirection() {
+    favStudyDirection = favStudyDirection === 'ru-ar' ? 'ar-ru' : 'ru-ar';
+    try { localStorage.setItem('arabrus_fav_direction', favStudyDirection); } catch (_) {}
+    renderApp();
+  }
+
+  function getFavoriteItemsForCurrentScope() {
+    let items = [...favorites];
+    if (activeCollection !== 'Все') {
+      items = items.filter(f => String(f.collection || '') === activeCollection);
+    }
+    return items;
+  }
+
+  function getFavoriteDifficultyStats(items) {
+    const stats = { all: items.length, blue: 0, red: 0, none: 0 };
+    items.forEach((f) => {
+      const color = String(f?.markColor || '').trim();
+      if (color === 'blue') stats.blue += 1;
+      else if (color === 'red') stats.red += 1;
+      else stats.none += 1;
+    });
+    return stats;
+  }
+
+  function setFavoriteDifficultyFilter(filterValue) {
+    favDifficultyFilter = filterValue || 'all';
+    try { localStorage.setItem('arabrus_fav_difficulty_filter', favDifficultyFilter); } catch (_) {}
+    favFilterMenuOpen = false;
+    renderApp();
+  }
+
+  function toggleFavoriteDifficultyMenu(forceValue = null) {
+    favFilterMenuOpen = forceValue === null ? !favFilterMenuOpen : !!forceValue;
+    renderApp();
+  }
+
+  function renderFavoriteDifficultyMenu() {
+    const scopeItems = getFavoriteItemsForCurrentScope();
+    const stats = getFavoriteDifficultyStats(scopeItems);
+
+    const options = [
+      { key: 'all', label: 'Все слова', count: stats.all },
+      { key: 'none', label: 'Без пометки', count: stats.none },
+      { key: 'blue', label: 'Сложные', count: stats.blue },
+      { key: 'red', label: 'Очень сложные', count: stats.red }
+    ];
+
+    return `
+      <div class="fav-filter-options">
+        ${options.map((option) => `
+          <button
+            type="button"
+            class="fav-filter-option ${favDifficultyFilter === option.key ? 'active' : ''}"
+            onclick="setFavoriteDifficultyFilter('${escapeJs(option.key)}')"
+          >
+            <span class="fav-filter-option-left">${escapeHtml(option.label)}</span>
+            <span class="fav-filter-option-count">${option.count}</span>
+          </button>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  function renderDictionaryHomeGuide() {
+    return `
+      <div class="home-guide">
+        <div class="home-guide-title">Как работает приложение</div>
+        <div class="home-guide-list">
+          <div class="home-guide-item">
+            <span class="home-guide-num">1</span>
+            <span>Зажми слово в избранных, чтобы отметить сложность.</span>
+          </div>
+          <div class="home-guide-item">
+            <span class="home-guide-num">2</span>
+            <span>Меняй режим просмотра в избранных: списком или карточками.</span>
+          </div>
+          <div class="home-guide-item">
+            <span class="home-guide-num">3</span>
+            <span>Создавай коллекции (папки) для слов по темам и повторения.</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderSupportSection() {
+    return `
+      <div class="support-box">
+        <div class="support-box-title">Техническая поддержка</div>
+        <div class="support-box-text">Если что-то не работает, хотите предложить улучшение или нужна помощь по доступу — напишите мне на почту.</div>
+        <button class="btn primary" onclick="openSupportEmail()">✉️ Написать в поддержку</button>
+      </div>
+    `;
+  }
+
+  function toggleFavoriteSelectionMode(forceValue = null) {
+    favSelectionMode = forceValue === null ? !favSelectionMode : !!forceValue;
+    if (!favSelectionMode) selectedFavoriteIds.clear();
+    renderBulkFolderOptions();
+    renderApp();
+  }
+
+  function toggleFavoriteSelected(id) {
+    if (selectedFavoriteIds.has(id)) selectedFavoriteIds.delete(id);
+    else selectedFavoriteIds.add(id);
+    renderSelectionPanel();
+    renderApp();
+  }
+
+  function renderSelectionPanel() {
+    const panel = document.getElementById('selectionPanel');
+    const selectEl = document.getElementById('bulkFolderSelect');
+    const inputEl = document.getElementById('bulkFolderInput');
+    const addBtn = document.getElementById('bulkAddFolderBtn');
+    const removeBtn = document.getElementById('bulkRemoveFolderBtn');
+
+    if (activeTab === 'fav' && favSelectionMode) {
+      panel.classList.add('active');
+      document.getElementById('selectedFavCount').innerText = String(selectedFavoriteIds.size);
+      const inFolderView = activeCollection !== 'Все';
+      const selectedItems = favorites.filter(f => selectedFavoriteIds.has(f.id));
+      const hasSelectedInFolder = selectedItems.some(f => String(f.collection || '').trim());
+      selectEl.style.display = (!inFolderView && !hasSelectedInFolder) ? '' : 'none';
+      inputEl.style.display = (!inFolderView && !hasSelectedInFolder) ? '' : 'none';
+      addBtn.style.display = (!inFolderView && !hasSelectedInFolder) ? '' : 'none';
+      removeBtn.style.display = (inFolderView || hasSelectedInFolder) ? '' : 'none';
+    } else {
+      panel.classList.remove('active');
+    }
+  }
+
+  function renderBulkFolderOptions() {
+    const sel = document.getElementById('bulkFolderSelect');
+    const cols = getCollectionsForFavorites().filter(x => x !== 'Все');
+    sel.innerHTML = '<option value="">Выберите существующую папку</option>' + cols.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  }
+
+  async function applyBulkFolder() {
+    if (!user) { openAuthModal(); return; }
+    if (!canUsePremiumFeatures()) { showActivationPrompt(); return; }
+    const ids = Array.from(selectedFavoriteIds);
+    if (!ids.length) { showMsg('Сначала выберите слова'); return; }
+    const existing = document.getElementById('bulkFolderSelect').value.trim();
+    const typed = document.getElementById('bulkFolderInput').value.trim();
+    const folder = typed || existing;
+    if (!folder) { showMsg('Выберите или введите папку'); return; }
+    try {
+      const batch = db.batch();
+      ids.forEach(id => {
+        const ref = db.collection('users').doc(user.uid).collection('favorites').doc(id);
+        batch.update(ref, { collection: folder, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      });
+      await batch.commit();
+      document.getElementById('bulkFolderInput').value = '';
+      document.getElementById('bulkFolderSelect').value = '';
+      showMsg('Папка сохранена');
+      toggleFavoriteSelectionMode(false);
+    } catch (e) {
+      console.error(e);
+      showMsg('Ошибка массового сохранения');
+    }
+  }
+
+  async function removeSelectedFavoritesFromFolder() {
+    if (!user) { openAuthModal(); return; }
+    if (!canUsePremiumFeatures()) { showActivationPrompt(); return; }
+    const ids = Array.from(selectedFavoriteIds);
+    if (!ids.length) { showMsg('Сначала выберите слова'); return; }
+    try {
+      const batch = db.batch();
+      ids.forEach(id => {
+        const ref = db.collection('users').doc(user.uid).collection('favorites').doc(id);
+        batch.update(ref, { collection: '', updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      });
+      await batch.commit();
+      showMsg('Убрано из папки');
+      toggleFavoriteSelectionMode(false);
+    } catch (e) {
+      console.error(e);
+      showMsg('Ошибка удаления из папки');
+    }
+  }
+
+  async function deleteSelectedFavorites() {
+    if (!user) { openAuthModal(); return; }
+    if (!canUsePremiumFeatures()) { showActivationPrompt(); return; }
+    const ids = Array.from(selectedFavoriteIds);
+    if (!ids.length) { showMsg('Сначала выберите слова'); return; }
+    try {
+      const batch = db.batch();
+      ids.forEach(id => {
+        const ref = db.collection('users').doc(user.uid).collection('favorites').doc(id);
+        batch.delete(ref);
+      });
+      await batch.commit();
+      showMsg('Удалено');
+      toggleFavoriteSelectionMode(false);
+    } catch (e) {
+      console.error(e);
+      showMsg('Ошибка массового удаления');
+    }
+  }
+
+  function toggleFavoriteViewMode() {
+    favViewMode = favViewMode === 'list' ? 'cards' : 'list';
+    localStorage.setItem('arabrus_fav_view_mode', favViewMode);
+    renderApp();
+  }
+
+  function shortPreview(text, limit = 90) {
+    const s = String(text || '').replace(/\s+/g, ' ').trim();
+    return s.length > limit ? s.slice(0, limit).trim() + '…' : s;
+  }
+
+  function populateSingleFolderOptions(mode, currentValue = '') {
+    const sel = document.getElementById('singleFolderSelect');
+    const cols = (mode === 'fav' ? getCollectionsForFavorites() : getCollectionsForNotes()).filter(x => x !== 'Все');
+    sel.innerHTML = '<option value="">Выберите существующую папку</option>' + cols.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    sel.value = currentValue || '';
+  }
+
+  function toggleNoteSelectionMode(forceValue = null) {
+    noteSelectionMode = forceValue === null ? !noteSelectionMode : !!forceValue;
+    if (!noteSelectionMode) selectedNoteIds.clear();
+    renderBulkNoteFolderOptions();
+    renderApp();
+  }
+
+  function toggleNoteSelected(id) {
+    if (selectedNoteIds.has(id)) selectedNoteIds.delete(id);
+    else selectedNoteIds.add(id);
+    renderNoteSelectionPanel();
+    renderApp();
+  }
+
+  function renderNoteSelectionPanel() {
+    const panel = document.getElementById('noteSelectionPanel');
+    if (activeTab === 'notes' && noteSelectionMode) {
+      panel.classList.add('active');
+      document.getElementById('selectedNoteCount').innerText = String(selectedNoteIds.size);
+    } else {
+      panel.classList.remove('active');
+    }
+  }
+
+  function renderBulkNoteFolderOptions() {
+    const sel = document.getElementById('bulkNoteFolderSelect');
+    const cols = getCollectionsForNotes().filter(x => x !== 'Все');
+    sel.innerHTML = '<option value="">Выберите существующую папку</option>' + cols.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  }
+
+  async function applyBulkNoteFolder() {
+    if (!user) { openAuthModal(); return; }
+    if (!canUsePremiumFeatures()) { showActivationPrompt(); return; }
+    const ids = Array.from(selectedNoteIds);
+    if (!ids.length) { showMsg('Сначала выберите записи'); return; }
+    const existing = document.getElementById('bulkNoteFolderSelect').value.trim();
+    const typed = document.getElementById('bulkNoteFolderInput').value.trim();
+    const folder = typed || existing;
+    if (!folder) { showMsg('Выберите или введите папку'); return; }
+    try {
+      const batch = db.batch();
+      ids.forEach(id => {
+        const ref = db.collection('users').doc(user.uid).collection('notes').doc(id);
+        batch.update(ref, { collection: folder, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      });
+      await batch.commit();
+      document.getElementById('bulkNoteFolderInput').value = '';
+      document.getElementById('bulkNoteFolderSelect').value = '';
+      showMsg('Папка сохранена');
+      toggleNoteSelectionMode(false);
+    } catch (e) {
+      console.error(e);
+      showMsg('Ошибка массового сохранения');
+    }
+  }
+
+  async function deleteSelectedNotes() {
+    if (!user) { openAuthModal(); return; }
+    if (!canUsePremiumFeatures()) { showActivationPrompt(); return; }
+    const ids = Array.from(selectedNoteIds);
+    if (!ids.length) { showMsg('Сначала выберите записи'); return; }
+    try {
+      const batch = db.batch();
+      ids.forEach(id => {
+        const ref = db.collection('users').doc(user.uid).collection('notes').doc(id);
+        batch.delete(ref);
+      });
+      await batch.commit();
+      showMsg('Удалено');
+      toggleNoteSelectionMode(false);
+    } catch (e) {
+      console.error(e);
+      showMsg('Ошибка массового удаления');
+    }
+  }
+
+  function renderCollections() {
+    let cols = [];
+    if (activeTab === 'fav') cols = getCollectionsForFavorites();
+    else if (activeTab === 'notes') cols = getCollectionsForNotes();
+
+    if (!cols.length || activeTab === 'dict') {
+      chipsEl.style.display = 'none';
+      chipsEl.innerHTML = '';
+      return;
+    }
+    if (!cols.includes(activeCollection)) activeCollection = 'Все';
+    chipsEl.style.display = 'flex';
+    chipsEl.innerHTML = cols.map(c =>
+      `<button class="chip ${c === activeCollection ? 'active' : ''}" onclick="selectCollection('${escapeJs(c)}')">${escapeHtml(c)}</button>`
+    ).join('');
+  }
+
+  function selectCollection(name) {
+    activeCollection = name;
+    renderApp();
+  }
+
+  function openFavModal(idx) {
+    const w = currentRenderedWords[idx];
+    favModalWord = w;
+    const existing = getFavoriteByWord(w);
+    document.getElementById('favModalAr').innerText = w.ar;
+    document.getElementById('favModalRu').value = existing?.customRu || w.short_ru || String(w.ru || '').split(';')[0];
+    document.getElementById('favModalTitle').innerText = existing ? 'Изменить перевод' : 'В избранное';
+    document.getElementById('favModalWrap').style.display = 'flex';
+    setTimeout(() => document.getElementById('favModalRu').focus(), 50);
+  }
+
+  function closeFavModal() {
+    favModalWord = null;
+    document.getElementById('favModalWrap').style.display = 'none';
+  }
+
+  async function confirmFavModal() {
+    if (!user) { openAuthModal(); return; }
+    if (!canUsePremiumFeatures()) { showActivationPrompt(); return; }
+    if (!favModalWord) return;
+
+    const w = favModalWord;
+    const id = makeFavId(w.ar, w.ru);
+    const customRu = document.getElementById('favModalRu').value.trim() || w.short_ru || String(w.ru || '').split(';')[0];
+    const existing = getFavoriteByWord(w);
+
+    const payload = {
+      ar: w.ar,
+      ruSource: w.ru,
+      customRu,
+      collection: existing?.collection || '',
+      markColor: existing?.markColor || '',
+      ts: existing?.ts || Date.now(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    try {
+      await db.collection('users').doc(user.uid).collection('favorites').doc(id).set(payload, { merge: true });
+      closeFavModal();
+      showMsg(existing ? 'Перевод обновлён' : 'Добавлено в избранное');
+    } catch (e) {
+      console.error(e);
+      showMsg('Ошибка сохранения');
+    }
+  }
+
+  async function toggleFavoriteDirect(idx) {
+    if (!user) { openAuthModal(); return; }
+    if (!canUsePremiumFeatures()) { showActivationPrompt(); return; }
+    const w = currentRenderedWords[idx];
+    const existing = getFavoriteByWord(w);
+    if (existing) {
+      try {
+        await db.collection('users').doc(user.uid).collection('favorites').doc(existing.id).delete();
+        showMsg('Удалено из избранного');
+      } catch (e) {
+        console.error(e);
+        showMsg('Ошибка удаления');
+      }
+    } else {
+      openFavModal(idx);
+    }
+  }
+
+  function openFavoriteEditModal(id) {
+    const fav = favorites.find(x => x.id === id);
+    if (!fav) { showMsg('Слово не найдено'); return; }
+    favModalWord = { ar: fav.ar || '', ru: fav.ruSource || '', short_ru: fav.customRu || '' };
+    document.getElementById('favModalAr').innerText = fav.ar || '';
+    document.getElementById('favModalRu').value = fav.customRu || '';
+    document.getElementById('favModalTitle').innerText = 'Изменить перевод';
+    document.getElementById('favModalWrap').style.display = 'flex';
+    setTimeout(() => document.getElementById('favModalRu').focus(), 50);
+  }
+
+  function openNoteEditModal(id) {
+    const note = notes.find(x => x.id === id);
+    if (!note) { showMsg('Запись не найдена'); return; }
+    currentEditingNoteId = id;
+    document.getElementById('noteEditModalArInput').value = note.ar || '';
+    document.getElementById('noteEditModalRu').value = note.ru || '';
+    document.getElementById('noteEditModalTitle').innerText = 'Редактировать запись';
+    document.getElementById('noteEditModalWrap').style.display = 'flex';
+    setTimeout(() => document.getElementById('noteEditModalArInput').focus(), 50);
+  }
+
+  function closeNoteEditModal() {
+    currentEditingNoteId = null;
+    document.getElementById('noteEditModalArInput').value = '';
+    document.getElementById('noteEditModalRu').value = '';
+    document.getElementById('noteEditModalWrap').style.display = 'none';
+  }
+
+  async function confirmNoteEditModal() {
+    if (!user) { openAuthModal(); return; }
+    if (!canUsePremiumFeatures()) { showActivationPrompt(); return; }
+    if (!currentEditingNoteId) return;
+    const ar = document.getElementById('noteEditModalArInput').value.trim();
+    const ru = document.getElementById('noteEditModalRu').value.trim();
+    if (!ar || !ru) { showMsg('Заполните арабский и русский текст'); return; }
+    const existing = notes.find(n => n.id === currentEditingNoteId);
+    const collection = existing?.collection || '';
+    const newId = makeNoteId(ar, ru, collection);
+    try {
+      await db.collection('users').doc(user.uid).collection('notes').doc(newId).set({
+        ar, ru, collection, ts: existing?.ts || Date.now(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+      if (newId !== currentEditingNoteId) {
+        await db.collection('users').doc(user.uid).collection('notes').doc(currentEditingNoteId).delete().catch(() => {});
+      }
+      closeNoteEditModal();
+      showMsg('Запись обновлена');
+    } catch (e) {
+      console.error(e);
+      showMsg('Ошибка сохранения');
+    }
+  }
+
+  function openFolderModal(mode, id, label) {
+    folderModalMode = mode;
+    folderModalTargetId = id;
+    document.getElementById('folderModalDesc').innerText = label;
+    let currentValue = '';
+    if (mode === 'fav') currentValue = favorites.find(x => x.id === id)?.collection || '';
+    if (mode === 'note') currentValue = notes.find(x => x.id === id)?.collection || '';
+    populateSingleFolderOptions(mode, currentValue);
+    document.getElementById('folderInput').value = currentValue || '';
+    document.getElementById('folderModalWrap').style.display = 'flex';
+    setTimeout(() => document.getElementById('folderInput').focus(), 50);
+  }
+
+  function closeFolderModal() {
+    folderModalMode = null;
+    folderModalTargetId = null;
+    document.getElementById('folderModalWrap').style.display = 'none';
+  }
+
+  async function confirmFolderModal() {
+    const selected = document.getElementById('singleFolderSelect').value.trim();
+    const typed = document.getElementById('folderInput').value.trim();
+    const value = typed || selected;
+    if (!user || !folderModalTargetId || !folderModalMode) { closeFolderModal(); return; }
+    try {
+      if (folderModalMode === 'fav') {
+        await db.collection('users').doc(user.uid).collection('favorites').doc(folderModalTargetId).update({
+          collection: value,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      } else if (folderModalMode === 'note') {
+        const old = notes.find(x => x.id === folderModalTargetId);
+        if (!old) throw new Error('Note not found');
+        const newId = makeNoteId(old.ar, old.ru, value);
+        await db.collection('users').doc(user.uid).collection('notes').doc(newId).set({
+          ar: old.ar,
+          ru: old.ru,
+          collection: value,
+          ts: old.ts || Date.now(),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        if (newId !== folderModalTargetId) {
+          await db.collection('users').doc(user.uid).collection('notes').doc(folderModalTargetId).delete().catch(() => {});
+        }
+      }
+      closeFolderModal();
+      showMsg('Папка сохранена');
+    } catch (e) {
+      console.error(e);
+      showMsg('Ошибка сохранения папки');
+    }
+  }
+
+  async function removeFavorite(id) {
+    if (!user) { openAuthModal(); return; }
+    if (!canUsePremiumFeatures()) { showActivationPrompt(); return; }
+    try {
+      await db.collection('users').doc(user.uid).collection('favorites').doc(id).delete();
+      showMsg('Удалено из избранного');
+    } catch (e) {
+      console.error(e);
+      showMsg('Ошибка удаления');
+    }
+  }
+
+  async function removeFavoriteFromFolder(id) {
+    if (!user) { openAuthModal(); return; }
+    if (!canUsePremiumFeatures()) { showActivationPrompt(); return; }
+    try {
+      await db.collection('users').doc(user.uid).collection('favorites').doc(id).update({
+        collection: '',
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      showMsg('Убрано из папки');
+    } catch (e) {
+      console.error(e);
+      showMsg('Ошибка изменения папки');
+    }
+  }
+
+  async function removeNote(id) {
+    if (!user) { openAuthModal(); return; }
+    if (!canUsePremiumFeatures()) { showActivationPrompt(); return; }
+    try {
+      await db.collection('users').doc(user.uid).collection('notes').doc(id).delete();
+      showMsg('Запись удалена');
+    } catch (e) {
+      console.error(e);
+      showMsg('Ошибка удаления');
+    }
+  }
+
+  async function removeNoteFromFolder(id) {
+    if (!user) { openAuthModal(); return; }
+    if (!canUsePremiumFeatures()) { showActivationPrompt(); return; }
+    const note = notes.find(x => x.id === id);
+    if (!note) return;
+    try {
+      const newId = makeNoteId(note.ar, note.ru, '');
+      await db.collection('users').doc(user.uid).collection('notes').doc(newId).set({
+        ar: note.ar,
+        ru: note.ru,
+        collection: '',
+        ts: note.ts || Date.now(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+      if (newId !== id) {
+        await db.collection('users').doc(user.uid).collection('notes').doc(id).delete().catch(() => {});
+      }
+      showMsg('Убрано из папки');
+    } catch (e) {
+      console.error(e);
+      showMsg('Ошибка изменения папки');
+    }
+  }
+
+  async function saveNote() {
+    if (!user) { openAuthModal(); return; }
+    if (!canUsePremiumFeatures()) { showActivationPrompt(); return; }
+    const ar = document.getElementById('manualAr').value.trim();
+    const ru = document.getElementById('manualRu').value.trim();
+    if (!ar || !ru) { showMsg('Заполните оба поля'); return; }
+    try {
+      await db.collection('users').doc(user.uid).collection('notes').add({
+        ar, ru, collection: '', ts: Date.now(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      document.getElementById('manualAr').value = '';
+      document.getElementById('manualRu').value = '';
+      showMsg('Фраза добавлена');
+    } catch (e) {
+      console.error(e);
+      showMsg('Ошибка сохранения');
+    }
+  }
+
+  function switchTab(tab) {
+    if (activeTab !== tab) clearAllSearchInputs();
+    activeTab = tab;
+    activeCollection = 'Все';
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.getElementById({ dict: 'tabDict', fav: 'tabFav', notes: 'tabNotes' }[tab]).classList.add('active');
+    document.getElementById('dictSection').style.display = tab === 'dict' ? 'block' : 'none';
+    renderApp();
+  }
+
+  let activeReadingSection = '';
+  let expandedReadingSection = '';
+  let readingPressTimer = null;
+  let readingPressState = { id: null, startX: 0, startY: 0, moved: false };
+  let dictRenderTimer = null;
+  const russianPartsCache = new WeakMap();
+
+
+  const READING_LIBRARY = {
+    politics: {
+      title: 'Политика',
+      previewLabel: 'Отрывок',
+      previewAr: 'اَلْبَيْتُ الْأَبْيَضُ: تَرَامْب سَيَبْحَثُ مَعَ أَمِينِ عَامِّ النَّاتُو...',
+      sentences: [
+        [
+          { ar: 'اَلْبَيْتُ الْأَبْيَضُ', ru: 'Белый дом' },
+          { ar: 'تَرَامْب', ru: 'Трамп' },
+          { ar: 'سَيَبْحَثُ مَعَ', ru: 'обсудит с' },
+          { ar: 'أَمِينِ عَامِّ النَّاتُو', ru: 'генсеком НАТО' },
+          { ar: 'إِمْكَانِيَّةَ انْسِحَابِ', ru: 'возможность выхода' },
+          { ar: 'الْوِلَايَاتِ الْمُتَّحِدَةِ', ru: 'США' },
+          { ar: 'مِنَ الْحِلْفِ', ru: 'из альянса' }
+        ],
+        [
+          { ar: 'أَعْلَنَتِ', ru: 'заявила' },
+          { ar: 'الْمُتَحَدِّثَةُ بِاسْمِ', ru: 'пресс-секретарь' },
+          { ar: 'الْبَيْتِ الْأَبْيَضِ', ru: 'Белого дома' },
+          { ar: 'كَارُولِين لِيفِيت', ru: 'Каролин Ливитт' },
+          { ar: 'أَنَّ الرَّئِيسَ', ru: 'что президент' },
+          { ar: 'دُونَالْد تَرَامْب', ru: 'Дональд Трамп' },
+          { ar: 'سَيُنَاقِشُ مَعَ', ru: 'обсудит с' },
+          { ar: 'أَمِينِ عَامِّ حِلْفِ النَّاتُو', ru: 'генсеком НАТО' },
+          { ar: 'مَارْك رُوتِه', ru: 'Марком Рютте' },
+          { ar: 'إِمْكَانِيَّةَ انْسِحَابِ', ru: 'возможность выхода' },
+          { ar: 'الْوِلَايَاتِ الْمُتَّحِدَةِ', ru: 'США' },
+          { ar: 'مِنَ الْحِلْفِ', ru: 'из альянса' }
+        ],
+        [
+          { ar: 'وَقَالَتْ لِيفِيت', ru: 'Ливитт сказала' },
+          { ar: 'لِلصَّحَفِيِّينَ', ru: 'журналистам' },
+          { ar: 'رُبَّمَا تَسْمَعُونَ ذَلِكَ', ru: 'возможно, вы услышите это' },
+          { ar: 'مُبَاشَرَةً مِنَ الرَّئِيسِ', ru: 'напрямую от президента' },
+          { ar: 'بَعْدَ الِاجْتِمَاعِ', ru: 'после встречи' },
+          { ar: 'دُونَ تَقْدِيمِ', ru: 'не предоставив' },
+          { ar: 'تَفَاصِيلَ إِضَافِيَّةٍ', ru: 'дополнительных деталей' },
+          { ar: 'عَنْ تَوْقِيتِ الِاجْتِمَاعِ', ru: 'о времени встречи' },
+          { ar: 'أَوْ جَدْوَلِ أَعْمَالِهِ', ru: 'или её повестке' }
+        ]
+      ]
+    },
+    sport: {
+      title: 'Спорт',
+      previewLabel: 'Отрывок',
+      previewRu: 'Раздел спорта подготовлен.',
+      placeholder: 'Здесь появятся короткие тексты про спорт.'
+    },
+    literature: {
+      title: 'Литература',
+      previewLabel: 'Отрывок',
+      previewRu: 'Раздел литературы подготовлен.',
+      placeholder: 'Здесь появятся короткие литературные отрывки.'
+    }
+  };
+
+  function setReadingSection(section) {
+    activeReadingSection = section;
+    expandedReadingSection = '';
+    hideReadingTranslations();
+    renderApp();
+  }
+
+  function toggleReadingArticle(section) {
+    if (activeReadingSection !== section) activeReadingSection = section;
+    expandedReadingSection = expandedReadingSection === section ? '' : section;
+    hideReadingTranslations();
+    renderApp();
+  }
+
+  function hideReadingTranslations() {
+    document.querySelectorAll('.reading-token.visible').forEach(el => el.classList.remove('visible'));
+  }
+
+  function startReadingPress(id, event) {
+    if (isReadingControlTarget(event?.target)) return;
+    const isTouchEvent = !!(event?.touches || event?.changedTouches);
+    if (event && isTouchEvent) event.preventDefault();
+    const point = getEventPoint(event);
+    clearTimeout(readingPressTimer);
+    readingPressState = { id, startX: point.x, startY: point.y, moved: false };
+    readingPressTimer = setTimeout(() => {
+      if (!readingPressState.id || readingPressState.id !== id || readingPressState.moved) return;
+      const el = document.getElementById(id);
+      if (!el) return;
+      const alreadyVisible = el.classList.contains('visible');
+      hideReadingTranslations();
+      if (!alreadyVisible) el.classList.add('visible');
+      readingPressState = { id: null, startX: 0, startY: 0, moved: false };
+      readingPressTimer = null;
+      try { if (navigator.vibrate) navigator.vibrate(20); } catch (_) {}
+    }, 400);
+  }
+
+  function moveReadingPress(event) {
+    if (!readingPressState.id) return;
+    const point = getEventPoint(event);
+    const dx = Math.abs(point.x - readingPressState.startX);
+    const dy = Math.abs(point.y - readingPressState.startY);
+    if (dx > 12 || dy > 12) {
+      readingPressState.moved = true;
+      cancelReadingPress();
+    }
+  }
+
+  function cancelReadingPress() {
+    clearTimeout(readingPressTimer);
+    readingPressTimer = null;
+    readingPressState = { id: null, startX: 0, startY: 0, moved: false };
+  }
+
+  async function saveReadingPair(ar, ru, collection) {
+    if (!user) { openAuthModal(); return; }
+    if (!canUsePremiumFeatures()) { showActivationPrompt(); return; }
+    const safeAr = String(ar || '').trim();
+    const safeRu = String(ru || '').trim();
+    if (!safeAr || !safeRu) { showMsg('Нет фразы для сохранения'); return; }
+    const folder = collection || 'Чтение';
+    try {
+      await db.collection('users').doc(user.uid).collection('notes').add({
+        ar: safeAr,
+        ru: safeRu,
+        collection: folder,
+        ts: Date.now(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      showMsg('Фраза добавлена в блокнот');
+    } catch (e) {
+      console.error(e);
+      showMsg('Ошибка сохранения');
+    }
+  }
+
+  function renderReadingFullContent(sectionKey) {
+    const section = READING_LIBRARY[sectionKey];
+    if (!section) return '';
+    if (section.placeholder) {
+      return `<div class="reading-placeholder">${escapeHtml(section.placeholder)}</div>`;
+    }
+    return section.sentences.map((sentence, sentenceIndex) => `
+      <div class="reading-sentence">
+        <div class="reading-line">
+          ${sentence.map((segment, segmentIndex) => {
+            const tokenId = `reading_${sectionKey}_${sentenceIndex}_${segmentIndex}`;
+            return `
+              <span
+                id="${tokenId}"
+                class="reading-token ${segment.ar.includes(' ') ? 'phrase' : ''}"
+                oncontextmenu="return false"
+                onmousedown="startReadingPress('${tokenId}', event)"
+                onmouseup="cancelReadingPress()"
+                onmouseleave="cancelReadingPress()"
+                onmousemove="moveReadingPress(event)"
+                ontouchstart="startReadingPress('${tokenId}', event)"
+                ontouchend="cancelReadingPress()"
+                ontouchcancel="cancelReadingPress()"
+                ontouchmove="moveReadingPress(event)"
+              >
+                <span class="reading-translation">
+                  <div class="reading-translation-text">${escapeHtml(segment.ru)}</div>
+                  <div class="reading-translation-actions">
+                    <button type="button" class="btn" onclick="event.stopPropagation(); speak('${escapeJs(segment.ar)}', event)">🔊</button>
+                    <button type="button" class="btn" onclick="event.stopPropagation(); saveReadingPair('${escapeJs(segment.ar)}', '${escapeJs(segment.ru)}', 'Чтение / ${escapeJs(section.title)}')">📝</button>
+                  </div>
+                </span>
+                <span class="reading-ar">${escapeHtml(segment.ar)}</span>
+              </span>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderReadingPanel(sectionKey) {
+    const section = READING_LIBRARY[sectionKey];
+    if (!section) return '';
+    const isOpen = expandedReadingSection === sectionKey;
+    const previewLine = section.previewAr
+      ? `<div class="reading-preview-line">${escapeHtml(section.previewAr)}</div>`
+      : `<div class="reading-preview-line preview-ru">${escapeHtml(section.previewRu || '')}</div>`;
+    return `
+      <div class="reading-panel">
+        <div class="reading-preview" onclick="toggleReadingArticle('${escapeJs(sectionKey)}')" oncontextmenu="return false">
+          <div class="reading-preview-label">${escapeHtml(section.title)} · ${escapeHtml(section.previewLabel || 'Отрывок')}</div>
+          ${previewLine}
+          <div class="reading-preview-hint">${isOpen ? 'Нажми, чтобы свернуть текст' : 'Нажми, чтобы открыть весь текст'}</div>
+        </div>
+        <div class="reading-full ${isOpen ? 'open' : ''}">
+          ${renderReadingFullContent(sectionKey)}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderReadingHub() {
+    return `
+      <div class="reading-box">
+        <div class="reading-tabs">
+          <button class="reading-tab ${activeReadingSection === 'politics' ? 'active' : ''}" onclick="setReadingSection('politics')">Политика</button>
+          <button class="reading-tab ${activeReadingSection === 'sport' ? 'active' : ''}" onclick="setReadingSection('sport')">Спорт</button>
+          <button class="reading-tab ${activeReadingSection === 'literature' ? 'active' : ''}" onclick="setReadingSection('literature')">Литература</button>
+        </div>
+        ${activeReadingSection ? renderReadingPanel(activeReadingSection) : ''}
+      </div>
+    `;
+  }
+
+
+  function hasCyrillic(text) {
+    return /[а-яё]/i.test(String(text || ''));
+  }
+
+  function cleanRussianSearchText(text) {
+    return String(text || '')
+      .toLowerCase()
+      .replace(/[()«»"'`~!@#$%^&*_=+\[\]{}\\|<>/?№:;,.]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function splitRussianSearchParts(text) {
+    const raw = String(text || '');
+    return raw
+      .split(/[\n;\/]|(?:\s[-–—]\s)|,/g)
+      .map(part => cleanRussianSearchText(part))
+      .filter(Boolean);
+  }
+
+  function getRussianSearchParts(word) {
+    if (russianPartsCache.has(word)) return russianPartsCache.get(word);
+
+    const parts = [];
+    const shortRu = cleanRussianSearchText(word.short_ru || '');
+    const fullRu = splitRussianSearchParts(word.ru || '');
+
+    if (shortRu) parts.push(shortRu);
+    for (const part of fullRu) {
+      if (!parts.includes(part)) parts.push(part);
+    }
+
+    russianPartsCache.set(word, parts);
+    return parts;
+  }
+
+  function getRussianPrimaryPart(word) {
+    return getRussianSearchParts(word)[0] || '';
+  }
+
+  function handleDictionaryInput() {
+    clearTimeout(dictRenderTimer);
+    const query = (document.getElementById('queryInput')?.value || '').trim();
+    document.body.classList.toggle('dict-searching', activeTab === 'dict' && query.length > 0);
+    dictRenderTimer = setTimeout(() => {
+      renderApp();
+    }, 90);
+  }
+
+  function getRussianTokens(text) {
+
+    return cleanRussianSearchText(text)
+      .split(' ')
+      .map(x => x.trim())
+      .filter(Boolean);
+  }
+
+  function getRussianSearchScore(word, query) {
+    const q = cleanRussianSearchText(query);
+    if (!q) return 0;
+
+    const parts = getRussianSearchParts(word);
+    if (!parts.length) return 0;
+
+    const qTokens = getRussianTokens(q);
+    const primary = parts[0] || '';
+
+    let best = 0;
+
+    for (const part of parts) {
+      if (!part) continue;
+
+      const tokens = getRussianTokens(part);
+      const tokenSet = new Set(tokens);
+
+      if (part === q) {
+        best = Math.max(best, 12000 - part.length);
+      }
+
+      if (primary === q) {
+        best = Math.max(best, 13000 - primary.length);
+      }
+
+      if (part.startsWith(q)) {
+        best = Math.max(best, 10000 - part.length);
+      }
+
+      if (primary.startsWith(q)) {
+        best = Math.max(best, 11000 - primary.length);
+      }
+
+      if (tokenSet.has(q)) {
+        best = Math.max(best, 9500 - part.length);
+      }
+
+      for (const token of tokens) {
+        if (token.startsWith(q)) {
+          best = Math.max(best, 9000 - token.length);
+        } else if (token.includes(q)) {
+          best = Math.max(best, 7600 - token.length);
+        }
+      }
+
+      if (part.includes(q)) {
+        best = Math.max(best, 7000 - part.length);
+      }
+
+      if (qTokens.length > 1) {
+        const allTokensFound = qTokens.every(token => part.includes(token));
+        if (allTokensFound) {
+          best = Math.max(best, 9800 - part.length);
+        }
+      }
+    }
+
+    return best;
+  }
+
+
+  function renderDictionary() {
+    if (typeof dictBase === 'undefined' || !Array.isArray(dictBase)) return '<div class="empty">База ещё не загружена</div>';
+
+    const q = document.getElementById('queryInput').value.toLowerCase().trim();
+    if (!q) {
+      currentRenderedWords = [];
+      return '<div class="empty">Начните вводить слово для поиска</div>' + renderDictionaryHomeGuide();
+    }
+
+    const isRussianQuery = hasCyrillic(q);
+    const nQ = normalize(q);
+    const stems = getArabicStems(nQ);
+    const mappedPastTense = reverseVerbsMap[nQ];
+
+    if (isRussianQuery) {
+      const ranked = [];
+      for (const w of dictBase) {
+        const score = getRussianSearchScore(w, q);
+        if (score > 0) {
+          ranked.push({
+            w,
+            score,
+            primary: getRussianPrimaryPart(w)
+          });
+        }
+      }
+
+      ranked.sort((a, b) => {
+        if (a.score !== b.score) return b.score - a.score;
+        if (a.primary.length !== b.primary.length) return a.primary.length - b.primary.length;
+        return String(a.w.ar || '').localeCompare(String(b.w.ar || ''));
+      });
+
+      currentRenderedWords = ranked.slice(0, 50).map(item => item.w);
+    } else {
+      const filtered = dictBase.filter(w => {
+        const nWordAr = normalize(w.ar);
+        const nRoot = normalize(w.root || '');
+        const nWordRu = String(w.ru || '').toLowerCase();
+
+        if (nWordRu.includes(q)) return true;
+        if (mappedPastTense && nWordAr === mappedPastTense) return true;
+
+        for (const stem of stems) {
+          if (nWordAr.includes(stem) || (nRoot && nRoot.includes(stem))) return true;
+        }
+        return false;
+      });
+
+      filtered.sort((a, b) => {
+        const normAAr = normalize(a.ar);
+        const normBAr = normalize(b.ar);
+        const ruA = String(a.short_ru || a.ru || '').toLowerCase().replace(/^[\d\)\s]+/, '');
+        const ruB = String(b.short_ru || b.ru || '').toLowerCase().replace(/^[\d\)\s]+/, '');
+
+        if (mappedPastTense) {
+          if (normAAr === mappedPastTense && normBAr !== mappedPastTense) return -1;
+          if (normBAr === mappedPastTense && normAAr !== mappedPastTense) return 1;
+        }
+
+        if (normAAr === nQ && normBAr !== nQ) return -1;
+        if (normBAr === nQ && normAAr !== nQ) return 1;
+
+        const startsRuA = ruA.startsWith(q);
+        const startsRuB = ruB.startsWith(q);
+
+        if (startsRuA && !startsRuB) return -1;
+        if (startsRuB && !startsRuA) return 1;
+
+        return String(a.ru || '').length - String(b.ru || '').length;
+      });
+
+      currentRenderedWords = filtered.slice(0, 50);
+    }
+
+    if (!currentRenderedWords.length) return '<div class="empty">Ничего не найдено</div>';
+
+    return currentRenderedWords.map((w, idx) => {
+      const fav = getFavoriteByWord(w);
+      const present = normalizedVerbs[normalize(w.ar)];
+      const locked = isPremiumLocked();
+      const shortRu = w.short_ru || getRussianPrimaryPart(w) || String(w.ru || '').split(';')[0] || '';
+      return `
+        <div class="item collapsible" onclick="this.classList.toggle('expanded')">
+          <div class="item-head">
+            <div class="item-left">
+              <div class="ru">${escapeHtml(shortRu)}</div>
+              <div class="ar">${escapeHtml(w.ar)}</div>
+              ${present ? `<div class="hint">Настоящее время: <b>${escapeHtml(present)}</b></div>` : ''}
+              ${fav ? `<div class="hint">⭐ Уже в избранном</div>` : ''}
+            </div>
+          </div>
+          <div class="item-details" onclick="event.stopPropagation()">
+            <div class="full-translation">${escapeHtml(w.ru || '')}</div>
+            ${present ? `<div class="verb-box"><div>Настоящее время</div><span>${escapeHtml(present)}</span></div>` : ''}
+            <div class="actions">
+              <button class="btn ${locked ? 'locked' : ''}" onclick="${locked ? "showActivationPrompt()" : `speak('${escapeJs(w.ar)}', event)`}">${locked ? '🔒 Озвучка' : '🔊 Слушать'}</button>
+              <button class="btn ${locked ? 'locked' : (fav ? 'warn' : '')}" onclick="${locked ? "showActivationPrompt()" : `toggleFavoriteDirect(${idx})`}">${locked ? '🔒 Избранное' : (fav ? '★ Уже в избранном' : '☆ В избранное')}</button>
+              ${fav && !locked ? `<button class="btn" onclick="openFavModal(${idx})">✏️ Изменить перевод</button>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderFavorites() {
+
+    if (!user) return '<div class="empty">Войдите через Google, чтобы использовать избранное</div>';
+    if (isPremiumLocked()) return renderLockedFeature('Избранное');
+
+    let items = [...favorites];
+    const isSpecificFolder = activeCollection !== 'Все';
+    const favQuery = (document.getElementById('favSearchInput')?.value || '').trim().toLowerCase();
+    const favQueryNormalized = normalize(favQuery);
+    const frontIsArabic = favStudyDirection === 'ar-ru';
+
+    if (isSpecificFolder) items = items.filter(f => String(f.collection || '') === activeCollection);
+    if (favDifficultyFilter !== 'all') items = items.filter(f => favoriteMatchesDifficulty(f));
+    if (favQuery) {
+      items = items.filter(f => {
+        const ar = String(f.ar || '').toLowerCase();
+        const ru = String(f.customRu || '').toLowerCase();
+        const ruSource = String(f.ruSource || '').toLowerCase();
+        const collection = String(f.collection || '').toLowerCase();
+        return ru.includes(favQuery) || ruSource.includes(favQuery) || collection.includes(favQuery) || ar.includes(favQuery) || normalize(ar).includes(favQueryNormalized);
+      });
+    }
+    items.sort((a, b) => Number(b.ts || 0) - Number(a.ts || 0));
+    if (!items.length) {
+      const emptyText = favQuery
+        ? 'Ничего не найдено в избранном'
+        : (favDifficultyFilter !== 'all' ? 'По выбранной сложности слов не найдено' : 'В избранном пока пусто');
+      return `<div class="empty">${emptyText}</div>`;
+    }
+
+    if (favViewMode === 'cards') {
+      return `<div class="cards-grid">` + items.map(f => {
+        const colorClass = getFavoriteColorClass(f);
+        const actionMode = favSelectionMode ? 'select' : 'flip';
+        const difficultyHint = getFavoriteDifficultyHint(f.markColor);
+        const frontHtml = frontIsArabic
+          ? `<div class="card-front-ar">${escapeHtml(f.ar || '')}</div>`
+          : `<div class="card-front-text">${escapeHtml(f.customRu || '')}</div>`;
+        const backMainHtml = frontIsArabic
+          ? `<div class="card-front-text">${escapeHtml(f.customRu || '')}</div>`
+          : `<div class="ar">${escapeHtml(f.ar || '')}</div>`;
+        return `
+          <div class="card-item ${colorClass} fav-press-target"
+               oncontextmenu="return false"
+               onmousedown="startFavoriteLongPress('${escapeJs(f.id)}', event)"
+               onmouseup="cancelFavoriteLongPress()"
+               onmousemove="moveFavoriteLongPress(event)"
+               onmouseleave="cancelFavoriteLongPress()"
+               ontouchstart="startFavoriteLongPress('${escapeJs(f.id)}', event)"
+               ontouchmove="moveFavoriteLongPress(event)"
+               ontouchend="cancelFavoriteLongPress()"
+               ontouchcancel="cancelFavoriteLongPress()"
+               onclick="return handleFavoriteItemPress('${actionMode}', '${escapeJs(f.id)}', this, event)">
+            ${favSelectionMode ? `<input class="card-checkbox" type="checkbox" ${selectedFavoriteIds.has(f.id) ? 'checked' : ''} onchange="event.stopPropagation(); toggleFavoriteSelected('${escapeJs(f.id)}')">` : ''}
+            <div class="card-star">★</div>
+            <div class="card-inner">
+              <div class="card-face">
+                <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px;">
+                  <div style="flex:1;"></div>
+                  ${getFavoriteColorDot(f.markColor)}
+                </div>
+                ${frontHtml}
+                ${difficultyHint ? `<div class="hint" style="text-align:center; margin-top:8px;">${escapeHtml(difficultyHint)}</div>` : ''}
+                <div class="card-hint">коснись, чтобы перевернуть</div>
+              </div>
+              <div class="card-face card-back">
+                <div style="display:flex; align-items:flex-start; justify-content:flex-end; width:100%; margin-bottom:8px;">${getFavoriteColorDot(f.markColor)}</div>
+                ${backMainHtml}
+                ${difficultyHint ? `<div class="hint" style="margin:6px 0 2px; text-align:center;">${escapeHtml(difficultyHint)}</div>` : ''}
+                <div class="actions" style="width:100%; margin-top:14px;">
+                  <button type="button" class="btn" onclick="event.stopPropagation(); speak('${escapeJs(f.ar || '')}', event)">🔊</button>
+                  <button class="btn" onclick="event.stopPropagation(); openFavoriteEditModal('${escapeJs(f.id)}')">✏️ Перевод</button>
+                  ${(isSpecificFolder || f.collection)
+                    ? `<button class="btn warn" onclick="event.stopPropagation(); removeFavoriteFromFolder('${escapeJs(f.id)}')">📂</button>`
+                    : `<button class="btn" onclick="event.stopPropagation(); openFolderModal('fav', '${escapeJs(f.id)}', 'Укажите папку для слова')">📁</button>`
+                  }
+                  <button class="btn danger" onclick="event.stopPropagation(); removeFavorite('${escapeJs(f.id)}')">🗑</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('') + `</div>`;
+    }
+
+    return items.map(f => {
+      const colorClass = getFavoriteColorClass(f);
+      const actionMode = favSelectionMode ? 'select' : 'expand';
+      const difficultyHint = getFavoriteDifficultyHint(f.markColor);
+      const mainBlock = frontIsArabic
+        ? `
+            <div class="fav-list-pair">
+              <div class="fav-list-col ar-col">
+                <div class="ar">${escapeHtml(f.ar || '')}</div>
+              </div>
+              <div class="fav-list-col ru-col">
+                <div class="ru">${escapeHtml(f.customRu || '')}</div>
+              </div>
+            </div>
+          `
+        : `
+            <div class="fav-list-pair">
+              <div class="fav-list-col ru-col">
+                <div class="ru">${escapeHtml(f.customRu || '')}</div>
+              </div>
+              <div class="fav-list-col ar-col">
+                <div class="ar">${escapeHtml(f.ar || '')}</div>
+              </div>
+            </div>
+          `;
+      return `
+        <div class="item collapsible ${colorClass} fav-press-target"
+             oncontextmenu="return false"
+             onmousedown="startFavoriteLongPress('${escapeJs(f.id)}', event)"
+             onmouseup="cancelFavoriteLongPress()"
+             onmousemove="moveFavoriteLongPress(event)"
+             onmouseleave="cancelFavoriteLongPress()"
+             ontouchstart="startFavoriteLongPress('${escapeJs(f.id)}', event)"
+             ontouchmove="moveFavoriteLongPress(event)"
+             ontouchend="cancelFavoriteLongPress()"
+             ontouchcancel="cancelFavoriteLongPress()"
+             onclick="return handleFavoriteItemPress('${actionMode}', '${escapeJs(f.id)}', this, event)">
+          <div class="item-head">
+            <div class="select-line" style="width:100%; align-items:flex-start;">
+              ${favSelectionMode ? `<input class="select-box" type="checkbox" ${selectedFavoriteIds.has(f.id) ? 'checked' : ''} onchange="event.stopPropagation(); toggleFavoriteSelected('${escapeJs(f.id)}')">` : ''}
+              <div class="item-left">
+                ${mainBlock}
+                ${difficultyHint ? `<div class="hint">${escapeHtml(difficultyHint)}</div>` : ''}
+              </div>
+              ${getFavoriteColorDot(f.markColor)}
+            </div>
+          </div>
+          <div class="item-details" onclick="event.stopPropagation()">
+            ${frontIsArabic
+              ? `<div class="ar" style="font-size:24px; margin-bottom:8px;">${escapeHtml(f.ar || '')}</div><div class="full-translation-fav">${escapeHtml(f.ruSource || '')}</div>`
+              : `<div class="full-translation-fav">${escapeHtml(f.ruSource || '')}</div><div class="ar" style="font-size:24px; margin:4px 0 0;">${escapeHtml(f.ar || '')}</div>`}
+            ${f.collection && !isSpecificFolder ? `<div class="hint">📁 ${escapeHtml(f.collection)}</div>` : ''}
+            <div class="actions">
+              <button class="btn" onclick="speak('${escapeJs(f.ar || '')}', event)">🔊 Слушать</button>
+              <button class="btn" onclick="openFavoriteEditModal('${escapeJs(f.id)}')">✏️ Изменить перевод</button>
+              ${(isSpecificFolder || f.collection)
+                ? `<button class="btn warn" onclick="removeFavoriteFromFolder('${escapeJs(f.id)}')">📂 Убрать из папки</button>`
+                : `<button class="btn" onclick="openFolderModal('fav', '${escapeJs(f.id)}', 'Укажите папку для слова')">📁 В папку</button>`
+              }
+              <button class="btn danger" onclick="removeFavorite('${escapeJs(f.id)}')">🗑 Удалить</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+
+  function renderNotes() {
+    if (!user) return '<div class="empty">Войдите через Google, чтобы использовать блокнот</div>';
+    if (isPremiumLocked()) return renderLockedFeature('Блокнот');
+
+    let items = [...notes];
+    const noteQuery = (document.getElementById('noteSearchInput')?.value || '').trim().toLowerCase();
+    const isSpecificFolder = activeCollection !== 'Все';
+
+    if (isSpecificFolder) items = items.filter(n => String(n.collection || '') === activeCollection);
+    if (noteQuery) {
+      items = items.filter(n =>
+        String(n.ru || '').toLowerCase().includes(noteQuery) ||
+        String(n.ar || '').toLowerCase().includes(noteQuery) ||
+        String(n.collection || '').toLowerCase().includes(noteQuery)
+      );
+    }
+
+    items.sort((a, b) => Number(b.ts || 0) - Number(a.ts || 0));
+    if (!items.length) return '<div class="empty">В блокноте пока пусто</div>';
+
+    return items.map(n => `
+      <div class="item note-item collapsible" onclick="${noteSelectionMode ? `toggleNoteSelected('${escapeJs(n.id)}')` : `this.classList.toggle('expanded')`}">
+        <div class="item-head">
+          <div class="select-line" style="width:100%;">
+            ${noteSelectionMode ? `<input class="select-box" type="checkbox" ${selectedNoteIds.has(n.id) ? 'checked' : ''} onchange="event.stopPropagation(); toggleNoteSelected('${escapeJs(n.id)}')">` : ''}
+            <div class="item-left">
+              <div class="ru note-preview-ru">${escapeHtml(shortPreview(n.ru || '', 120))}</div>
+              <div class="ar note-preview-ar">${escapeHtml(shortPreview(n.ar || '', 56))}</div>
+              ${n.collection && !isSpecificFolder ? `<div class="hint">📁 ${escapeHtml(n.collection)}</div>` : ''}
+            </div>
+          </div>
+        </div>
+        <div class="item-details">
+          <div class="ru">${escapeHtml(n.ru || '')}</div>
+          <div class="ar">${escapeHtml(n.ar || '')}</div>
+          <div class="actions">
+            <button type="button" class="btn" onclick="event.stopPropagation(); speak('${escapeJs(n.ar || '')}', event)">🔊 Слушать</button>
+            <button class="btn" onclick="event.stopPropagation(); openNoteEditModal('${escapeJs(n.id)}')">✏️ Редактировать</button>
+            ${(isSpecificFolder || n.collection)
+              ? `<button class="btn warn" onclick="event.stopPropagation(); removeNoteFromFolder('${escapeJs(n.id)}')">📂 Убрать из папки</button>`
+              : `<button class="btn" onclick="event.stopPropagation(); openFolderModal('note', '${escapeJs(n.id)}', 'Укажите папку для записи')">📁 В папку</button>`
+            }
+            <button class="btn danger" onclick="event.stopPropagation(); removeNote('${escapeJs(n.id)}')">🗑 Удалить</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderApp() {
+    renderCollections();
+    renderSelectionPanel();
+    renderNoteSelectionPanel();
+    updateTrialIndicator();
+    updateCompactLoginUi();
+
+    const dictQuery = (document.getElementById('queryInput')?.value || '').trim();
+    const dictSearching = activeTab === 'dict' && dictQuery.length > 0;
+
+    document.body.classList.toggle('compact-favs', activeTab === 'fav');
+    document.body.classList.toggle('compact-notes', activeTab === 'notes');
+    document.body.classList.toggle('dict-searching', dictSearching);
+
+    const topbar = document.getElementById('favTopbar');
+    const favFilterMenu = document.getElementById('favFilterMenu');
+    const favSearchBar = document.getElementById('favSearchBar');
+    const noteTopbar = document.getElementById('noteTopbar');
+    const noteSelectBtn = document.getElementById('noteSelectBtn');
+    const notesComposer = document.getElementById('notesComposer');
+    const favTab = document.getElementById('tabFav');
+    const noteTab = document.getElementById('tabNotes');
+    const locked = isPremiumLocked();
+
+    favTab.textContent = locked ? '⭐ Избранное 🔒' : '⭐ Избранное';
+    noteTab.textContent = locked ? '📝 Блокнот 🔒' : '📝 Блокнот';
+
+    if (activeTab === 'fav' && user && !locked) {
+      topbar.style.display = 'flex';
+      favSearchBar.style.display = 'block';
+      favFilterMenu.style.display = favFilterMenuOpen ? 'block' : 'none';
+      favFilterMenu.className = 'fav-filter-menu' + (favFilterMenuOpen ? ' active' : '');
+      favFilterMenu.innerHTML = favFilterMenuOpen ? renderFavoriteDifficultyMenu() : '';
+      topbar.innerHTML = `
+        <button class="btn" onclick="toggleFavoriteViewMode()">${favViewMode === 'list' ? '🎴 Режим карточек' : '📄 Режим списка'}</button>
+        <button class="btn" onclick="toggleFavoriteStudyDirection()">${getFavoriteDirectionButtonLabel()}</button>
+        <button class="btn fav-filter-trigger ${favFilterMenuOpen ? 'primary' : ''}" onclick="toggleFavoriteDifficultyMenu()">${getFavoriteDifficultyButtonLabel()}</button>
+        <button class="btn" onclick="toggleFavoriteSelectionMode()">${favSelectionMode ? '✖ Завершить выбор' : '☑️ Выбрать'}</button>
+      `;
+    } else {
+      topbar.style.display = 'none';
+      topbar.innerHTML = '';
+      favFilterMenu.style.display = 'none';
+      favFilterMenu.className = 'fav-filter-menu';
+      favFilterMenu.innerHTML = '';
+      favSearchBar.style.display = 'none';
+    }
+
+    if (activeTab === 'notes' && user && !locked) {
+      noteTopbar.style.display = 'flex';
+      noteSelectBtn.textContent = noteSelectionMode ? '✖ Завершить выбор' : '☑️ Выбрать';
+    } else {
+      noteTopbar.style.display = 'none';
+    }
+
+    if (notesComposer) notesComposer.style.display = activeTab === 'notes' && !locked ? 'block' : 'none';
+
+    if (activeTab === 'dict') listEl.innerHTML = renderDictionary();
+    else if (activeTab === 'fav') listEl.innerHTML = renderFavorites();
+    else listEl.innerHTML = renderNotes();
+  }
+
+  function stopListeners() {
+    if (typeof unsubAccess === 'function') { unsubAccess(); unsubAccess = null; }
+    if (typeof unsubFavs === 'function') { unsubFavs(); unsubFavs = null; }
+    if (typeof unsubNotes === 'function') { unsubNotes(); unsubNotes = null; }
+    favSnapshotPending = false;
+    noteSnapshotPending = false;
+    userAccess = { premiumActive: false, premiumUntilMs: 0 };
+    updateSyncIndicator();
+    updateTrialIndicator();
+  }
+
+  function startUserListeners() {
+    if (!user) return;
+
+    unsubAccess = db.collection('users').doc(user.uid)
+      .onSnapshot((doc) => {
+        const data = doc.exists ? (doc.data() || {}) : {};
+        let premiumEndMs = 0;
+        let isActive = !!(data.premiumActive || data.premium || data.isPremium);
+        if (data.premiumUntil) {
+          if (typeof data.premiumUntil === 'string') {
+            const parsedMs = new Date(data.premiumUntil).getTime();
+            if (!isNaN(parsedMs)) {
+              premiumEndMs = parsedMs;
+              isActive = true;
+            }
+          } else {
+            premiumEndMs = Number(data.premiumUntil);
+          }
+        } else if (data.premiumUntilMs || data.accessUntilMs) {
+          premiumEndMs = Number(data.premiumUntilMs || data.accessUntilMs || 0);
+        }
+
+        userAccess = { premiumActive: isActive, premiumUntilMs: premiumEndMs };
+        updateTrialIndicator();
+        renderApp();
+      }, (e) => {
+        console.error(e);
+        userAccess = { premiumActive: false, premiumUntilMs: 0 };
+        updateTrialIndicator();
+      });
+
+    unsubFavs = db.collection('users').doc(user.uid).collection('favorites')
+      .onSnapshot((snap) => {
+        favSnapshotPending = !!snap.metadata.hasPendingWrites;
+        favorites = snap.docs.map(doc => ({ id: doc.id, ...(doc.data() || {}) }));
+        updateSyncIndicator();
+        renderApp();
+      }, (e) => {
+        console.error(e);
+        favSnapshotPending = false;
+        updateSyncIndicator();
+        showMsg('Ошибка синхронизации избранного');
+      });
+
+    unsubNotes = db.collection('users').doc(user.uid).collection('notes')
+      .onSnapshot((snap) => {
+        noteSnapshotPending = !!snap.metadata.hasPendingWrites;
+        notes = snap.docs.map(doc => ({ id: doc.id, ...(doc.data() || {}) }));
+        updateSyncIndicator();
+        renderApp();
+      }, (e) => {
+        console.error(e);
+        noteSnapshotPending = false;
+        updateSyncIndicator();
+        showMsg('Ошибка синхронизации блокнота');
+      });
+  }
+
+  function applyAuthState(u) {
+    stopListeners();
+    user = u;
+    favorites = [];
+    notes = [];
+    const btn = document.getElementById('authBtn');
+    const userLine = document.getElementById('userLine');
+
+    if (user) {
+      btn.innerText = `Выйти (${(user.displayName || 'Пользователь').split(' ')[0]})`;
+      userLine.innerText = user.email || user.uid;
+      startUserListeners();
+    } else {
+      btn.innerText = '🌐 Войти через Google';
+      userLine.innerText = firebaseReady ? 'Не выполнен вход' : 'Офлайн-режим';
+    }
+    updateSyncIndicator();
+    updateTrialIndicator();
+    updateCompactLoginUi();
+    renderApp();
+  }
+
+  function attachAuthStateListener(currentAuth) {
+    if (authStateUnsub) {
+      try { authStateUnsub(); } catch (_) {}
+      authStateUnsub = null;
+    }
+    currentAuth.getRedirectResult().catch((e) => {
+      console.error('Redirect auth error:', e);
+    });
+    authStateUnsub = currentAuth.onAuthStateChanged((u) => {
+      applyAuthState(u);
+    });
+  }
+
+  async function initFirebaseServices() {
+    if (!window.firebase) return false;
+    try {
+      if (!window.firebase.apps.length) window.firebase.initializeApp(firebaseConfig);
+      auth = window.firebase.auth();
+      db = window.firebase.firestore();
+      provider = new window.firebase.auth.GoogleAuthProvider();
+      firebaseReady = true;
+      db.enablePersistence().catch((err) => {
+        console.error('Persistence error:', err);
+      });
+      attachAuthStateListener(auth);
+      updateSyncIndicator();
+      updateTrialIndicator();
+      renderApp();
+      return true;
+    } catch (err) {
+      console.error('Firebase init error:', err);
+      firebaseReady = false;
+      auth = createOfflineAuthStub();
+      db = createOfflineDbStub();
+      provider = null;
+      attachAuthStateListener(auth);
+      return false;
+    }
+  }
+
+  async function loadFirebaseSdk(force = false) {
+    if (firebaseReady && window.firebase && !force) return true;
+    if (!navigator.onLine && !force) {
+      updateSyncIndicator();
+      return false;
+    }
+    if (firebaseLoadingPromise && !force) return firebaseLoadingPromise;
+
+    firebaseLoadingPromise = (async () => {
+      try {
+        for (const src of FIREBASE_SDK_URLS) {
+          await loadExternalScript(src);
+        }
+        return await initFirebaseServices();
+      } catch (err) {
+        console.error('Firebase SDK load error:', err);
+        firebaseReady = false;
+        auth = createOfflineAuthStub();
+        db = createOfflineDbStub();
+        provider = null;
+        attachAuthStateListener(auth);
+        updateSyncIndicator();
+        updateTrialIndicator();
+        renderApp();
+        return false;
+      } finally {
+        firebaseLoadingPromise = null;
+      }
+    })();
+
+    return firebaseLoadingPromise;
+  }
+
+  async function toggleAuth() {
+    try {
+      if (user) {
+        await auth.signOut();
+        return;
+      }
+
+      if (!firebaseReady) {
+        const loaded = await loadFirebaseSdk(true);
+        if (!loaded || !provider) {
+          showMsg('Для входа через Google нужен интернет');
+          return;
+        }
+      }
+
+      try {
+        await auth.signInWithPopup(provider);
+      } catch (popupError) {
+        console.error('Popup auth error:', popupError);
+        const codes = [
+          'auth/popup-blocked',
+          'auth/popup-closed-by-user',
+          'auth/cancelled-popup-request',
+          'auth/operation-not-supported-in-this-environment'
+        ];
+        if (codes.includes(popupError.code)) {
+          await auth.signInWithRedirect(provider);
+          return;
+        }
+        throw popupError;
+      }
+    } catch (e) {
+      console.error('Auth error:', e);
+      showMsg(e && e.code === 'firebase/unavailable' ? 'Для входа через Google нужен интернет' : 'Ошибка входа через Google');
+    }
+  }
+
+  attachAuthStateListener(auth);
+
+  const initStartedAt = Date.now();
+  const initInterval = setInterval(() => {
+    if (typeof dictBase !== 'undefined' && Array.isArray(dictBase)) {
+      clearInterval(initInterval);
+      setStatus(`✅ База готова: ${dictBase.length} слов`, 'ok');
+      if (typeof verbsBase !== 'undefined') {
+        for (const pastTense in verbsBase) {
+          const presentTense = verbsBase[pastTense];
+          normalizedVerbs[normalize(pastTense)] = presentTense;
+          reverseVerbsMap[normalize(presentTense)] = normalize(pastTense);
+        }
+      }
+      renderApp();
+      return;
+    }
+    if (Date.now() - initStartedAt > 10000) {
+      clearInterval(initInterval);
+      setStatus('❌ Не удалось загрузить base.js или verbs.js', 'err');
+    }
+  }, 100);
+
+  document.addEventListener('click', (event) => {
+    if (!event.target.closest('.reading-token')) hideReadingTranslations();
+  }, true);
+
+  document.addEventListener('scroll', () => {
+    hideReadingTranslations();
+  }, true);
+
+  document.addEventListener('click', (event) => {
+    if (!favFilterMenuOpen) return;
+    if (event.target.closest('#favTopbar') || event.target.closest('#favFilterMenu')) return;
+    favFilterMenuOpen = false;
+    if (activeTab === 'fav') renderApp();
+  }, true);
+
+  ['favModalWrap', 'noteEditModalWrap', 'folderModalWrap', 'markColorModalWrap', 'authModalWrap'].forEach(id => {
+    const modal = document.getElementById(id);
+    modal.addEventListener('click', (e) => {
+      if (e.target !== modal) return;
+      if (id === 'favModalWrap') closeFavModal();
+      if (id === 'noteEditModalWrap') closeNoteEditModal();
+      if (id === 'folderModalWrap') closeFolderModal();
+      if (id === 'markColorModalWrap') closeMarkColorModal();
+      if (id === 'authModalWrap') closeAuthModal();
+    });
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    closeFavModal();
+    closeNoteEditModal();
+    closeFolderModal();
+    closeAuthModal();
+    closeMarkColorModal();
+  });
+
+  trialIndicatorEl?.addEventListener('click', () => {
+    if (!user) {
+      openAuthModal();
+      return;
+    }
+    openActivationContact();
+  });
+
+  window.addEventListener('online', updateSyncIndicator);
+  window.addEventListener('offline', updateSyncIndicator);
+  window.addEventListener('load', () => {
+    updateSyncIndicator();
+    updateTrialIndicator();
+    renderApp();
+    installBackButtonHandler();
+    loadFirebaseSdk();
+  });
+</script>
+
+<style>
+  .compact-auth-bar {
+    display: none;
+    align-items: center;
+    justify-content: flex-end;
+    margin: -4px 0 10px;
+  }
+
+  .compact-auth-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #1e293b;
+    border-radius: 999px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  .compact-auth-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    flex: 0 0 auto;
+    background: #94a3b8;
+    box-shadow: 0 0 0 3px rgba(148,163,184,0.12);
+  }
+
+  .compact-auth-dot.ok {
+    background: #16a34a;
+    box-shadow: 0 0 0 3px rgba(22,163,74,0.16);
+  }
+
+  .compact-auth-dot.warn {
+    background: #eab308;
+    box-shadow: 0 0 0 3px rgba(234,179,8,0.18);
+  }
+
+  .compact-auth-dot.err {
+    background: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220,38,38,0.16);
+  }
+
+  .compact-auth-dot.sync {
+    background: #16a34a;
+    box-shadow: 0 0 0 3px rgba(22,163,74,0.16);
+    animation: compactPulse 1s infinite ease-in-out;
+  }
+
+  @keyframes compactPulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.15); opacity: .75; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .compact-auth-label {
+    line-height: 1;
+  }
+
+  .compact-auth-menu-icon {
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  .compact-auth-modal {
+    max-width: 420px;
+    width: 100%;
+  }
+
+  .compact-auth-title {
+    margin: 0 0 14px;
+    text-align: center;
+    color: #0f172a;
+  }
+
+  .compact-auth-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: #fff;
+  }
+
+  .compact-auth-card small {
+    display: block;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    letter-spacing: .02em;
+  }
+
+  .compact-auth-main {
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.35;
+    word-break: break-word;
+  }
+
+  .compact-auth-sub {
+    color: #64748b;
+    font-size: 12px;
+    margin-top: 4px;
+    line-height: 1.35;
+  }
+
+  .compact-auth-status-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .compact-auth-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+
+  .compact-auth-actions .btn {
+    flex: 1;
+    min-width: 130px;
+  }
+
+  body.logged-in-compact .auth-row,
+  body.logged-in-compact #syncIndicator,
+  body.logged-in-compact #trialIndicator,
+  body.logged-in-compact #userLine {
+    display: none !important;
+  }
+
+  body.logged-in-compact #status {
+    display: none !important;
+  }
+
+  body.logged-in-compact .header {
+    margin-bottom: 8px;
+  }
+
+  body.dict-searching .compact-auth-bar {
+    display: none !important;
+  }
+</style>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
+    else fn();
+  }
+
+  ready(function () {
+    const headerEl = document.querySelector('.header');
+    if (!headerEl) return;
+
+    let compactBar = document.getElementById('compactAuthBar');
+    if (!compactBar) {
+      compactBar = document.createElement('div');
+      compactBar.id = 'compactAuthBar';
+      compactBar.className = 'compact-auth-bar';
+      compactBar.innerHTML = `
+        <button id="compactAuthBtn" class="compact-auth-btn" type="button">
+          <span id="compactAuthDot" class="compact-auth-dot"></span>
+          <span id="compactAuthLabel" class="compact-auth-label">Статус</span>
+          <span class="compact-auth-menu-icon">☰</span>
+        </button>
+      `;
+      headerEl.insertAdjacentElement('afterend', compactBar);
+    }
+
+    let modalWrap = document.getElementById('compactAuthModalWrap');
+    if (!modalWrap) {
+      modalWrap = document.createElement('div');
+      modalWrap.id = 'compactAuthModalWrap';
+      modalWrap.className = 'modal-overlay';
+      modalWrap.innerHTML = `
+        <div class="modal compact-auth-modal">
+          <h3 class="compact-auth-title">Аккаунт и синхронизация</h3>
+
+          <div class="compact-auth-card">
+            <small>Пользователь</small>
+            <div id="compactAuthUser" class="compact-auth-main">—</div>
+            <div id="compactAuthUserSub" class="compact-auth-sub"></div>
+          </div>
+
+          <div class="compact-auth-card">
+            <small>Статус</small>
+            <div class="compact-auth-status-line">
+              <span id="compactAuthStatusDot" class="compact-auth-dot"></span>
+              <div>
+                <div id="compactAuthStatusMain" class="compact-auth-main">—</div>
+                <div id="compactAuthStatusSub" class="compact-auth-sub"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="compact-auth-card">
+            <small>Доступ</small>
+            <div id="compactAuthAccessMain" class="compact-auth-main">—</div>
+            <div id="compactAuthAccessSub" class="compact-auth-sub"></div>
+          </div>
+
+          <div class="compact-auth-actions">
+            <button id="compactAuthAccessBtn" class="btn primary" type="button">💎 Доступ</button>
+            <button id="compactAuthSupportBtn" class="btn" type="button">✉️ Техподдержка</button>
+            <button id="compactAuthLogoutBtn" class="btn danger" type="button">🚪 Выйти</button>
+            <button id="compactAuthCloseBtn" class="btn" type="button">Закрыть</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modalWrap);
+    }
+
+    const compactBtn = document.getElementById('compactAuthBtn');
+    const compactDot = document.getElementById('compactAuthDot');
+    const compactLabel = document.getElementById('compactAuthLabel');
+
+    const modalUser = document.getElementById('compactAuthUser');
+    const modalUserSub = document.getElementById('compactAuthUserSub');
+    const modalStatusDot = document.getElementById('compactAuthStatusDot');
+    const modalStatusMain = document.getElementById('compactAuthStatusMain');
+    const modalStatusSub = document.getElementById('compactAuthStatusSub');
+    const modalAccessMain = document.getElementById('compactAuthAccessMain');
+    const modalAccessSub = document.getElementById('compactAuthAccessSub');
+
+    const accessBtn = document.getElementById('compactAuthAccessBtn');
+    const supportBtn = document.getElementById('compactAuthSupportBtn');
+    const logoutBtn = document.getElementById('compactAuthLogoutBtn');
+    const closeBtn = document.getElementById('compactAuthCloseBtn');
+
+    const statusEl = document.getElementById('status');
+    const syncEl = document.getElementById('syncIndicator');
+    const trialEl = document.getElementById('trialIndicator');
+    const authRow = document.querySelector('.auth-row');
+    const userLine = document.getElementById('userLine');
+
+    function isLoggedInNow() {
+      try { return typeof user !== 'undefined' && !!user; } catch (_) { return false; }
+    }
+
+    function getSyncState() {
+      try {
+        if (!isLoggedInNow()) {
+          return {
+            tone: 'warn',
+            short: 'Вход',
+            main: 'Требуется вход',
+            sub: 'Войдите через Google, чтобы включить синхронизацию'
+          };
+        }
+
+        const pending = !!(
+          (typeof favSnapshotPending !== 'undefined' && favSnapshotPending) ||
+          (typeof noteSnapshotPending !== 'undefined' && noteSnapshotPending)
+        );
+
+        if (!navigator.onLine && pending) {
+          return {
+            tone: 'warn',
+            short: 'Офлайн',
+            main: 'Нет сети',
+            sub: 'Изменения сохранены локально и ждут синхронизации'
+          };
+        }
+
+        if (!navigator.onLine) {
+          return {
+            tone: 'warn',
+            short: 'Офлайн',
+            main: 'Нет сети',
+            sub: 'Последние данные доступны локально'
+          };
+        }
+
+        if (pending) {
+          return {
+            tone: 'ok',
+            short: 'Онлайн',
+            main: 'В сети',
+            sub: 'Синхронизация с облаком...'
+          };
+        }
+
+        return {
+          tone: 'ok',
+          short: 'Онлайн',
+          main: 'В сети',
+          sub: 'Всё сохранено в облаке'
+        };
+      } catch (_) {
+        return {
+          tone: 'warn',
+          short: 'Статус',
+          main: 'Статус обновляется',
+          sub: ''
+        };
+      }
+    }
+
+    function getAccessState() {
+      try {
+        if (!isLoggedInNow()) {
+          return {
+            main: 'Войдите в Google',
+            sub: 'После входа начнётся пробный период и включится синхронизация'
+          };
+        }
+
+        if (typeof hasPaidAccess === 'function' && hasPaidAccess()) {
+          if (typeof userAccess !== 'undefined' && userAccess && userAccess.premiumUntilMs) {
+            const d = new Date(userAccess.premiumUntilMs);
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            return {
+              main: 'Премиум активен',
+              sub: 'Доступ до ' + day + '.' + month + '.' + year
+            };
+          }
+          return {
+            main: 'Премиум активен',
+            sub: 'Полный доступ включён'
+          };
+        }
+
+        if (typeof getTrialInfo === 'function') {
+          const trial = getTrialInfo();
+          if (trial && trial.active) {
+            return {
+              main: 'Пробный период активен',
+              sub: 'Осталось дней: ' + trial.daysLeft
+            };
+          }
+        }
+
+        return {
+          main: 'Пробный период закончился',
+          sub: 'Открой меню и нажми “Доступ”, чтобы написать тебе для активации'
+        };
+      } catch (_) {
+        return {
+          main: 'Доступ обновляется',
+          sub: ''
+        };
+      }
+    }
+
+    function updateVisibility() {
+      const logged = isLoggedInNow();
+      document.body.classList.toggle('logged-in-compact', logged);
+      try {
+        document.documentElement.classList.toggle('prelogged-in-compact', logged);
+        localStorage.setItem('arabrus_logged_in', logged ? '1' : '0');
+      } catch (_) {}
+
+      if (compactBar) compactBar.style.display = logged ? 'flex' : 'none';
+      if (authRow) authRow.style.display = logged ? 'none' : 'flex';
+      if (userLine) userLine.style.display = logged ? 'none' : '';
+
+      if (syncEl) syncEl.style.display = logged ? 'none' : '';
+      if (trialEl) trialEl.style.display = logged ? 'none' : '';
+
+      if (statusEl) {
+        statusEl.classList.toggle('compact-hideable', logged);
+        statusEl.style.display = logged ? 'none' : '';
+      }
+    }
+
+    function applyDot(el, tone) {
+      if (!el) return;
+      el.className = 'compact-auth-dot ' + tone;
+    }
+
+    function refreshCompactUi() {
+      updateVisibility();
+
+      const syncState = getSyncState();
+      const accessState = getAccessState();
+
+      applyDot(compactDot, syncState.tone);
+      applyDot(modalStatusDot, syncState.tone);
+
+      if (compactLabel) compactLabel.textContent = syncState.short;
+      if (modalStatusMain) modalStatusMain.textContent = syncState.main;
+      if (modalStatusSub) modalStatusSub.textContent = syncState.sub;
+
+      if (modalUser) {
+        if (isLoggedInNow()) {
+          try {
+            modalUser.textContent = user.displayName || user.email || 'Пользователь';
+            modalUserSub.textContent = user.email || '';
+          } catch (_) {
+            modalUser.textContent = 'Пользователь';
+            modalUserSub.textContent = '';
+          }
+        } else {
+          modalUser.textContent = 'Не выполнен вход';
+          modalUserSub.textContent = '';
+        }
+      }
+
+      if (modalAccessMain) modalAccessMain.textContent = accessState.main;
+      if (modalAccessSub) modalAccessSub.textContent = accessState.sub;
+    }
+
+    function openCompactMenu() {
+      refreshCompactUi();
+      modalWrap.style.display = 'flex';
+    }
+
+    function closeCompactMenu() {
+      modalWrap.style.display = 'none';
+    }
+
+    compactBtn.addEventListener('click', openCompactMenu);
+    closeBtn.addEventListener('click', closeCompactMenu);
+
+    modalWrap.addEventListener('click', function (e) {
+      if (e.target === modalWrap) closeCompactMenu();
+    });
+
+    accessBtn.addEventListener('click', function () {
+      closeCompactMenu();
+      try {
+        if (!isLoggedInNow()) {
+          if (typeof openAuthModal === 'function') openAuthModal();
+          else if (typeof toggleAuth === 'function') toggleAuth();
+          return;
+        }
+        if (typeof openActivationContact === 'function') openActivationContact();
+      } catch (_) {}
+    });
+
+    supportBtn.addEventListener('click', function () {
+      closeCompactMenu();
+      try {
+        if (typeof openSupportEmail === 'function') openSupportEmail();
+      } catch (_) {}
+    });
+
+    logoutBtn.addEventListener('click', function () {
+      closeCompactMenu();
+      try {
+        if (typeof toggleAuth === 'function' && isLoggedInNow()) toggleAuth();
+      } catch (_) {}
+    });
+
+    const originalUpdateSyncIndicator = typeof updateSyncIndicator === 'function' ? updateSyncIndicator : null;
+    if (originalUpdateSyncIndicator) {
+      updateSyncIndicator = function () {
+        const result = originalUpdateSyncIndicator.apply(this, arguments);
+        refreshCompactUi();
+        return result;
+      };
+    }
+
+    const originalUpdateTrialIndicator = typeof updateTrialIndicator === 'function' ? updateTrialIndicator : null;
+    if (originalUpdateTrialIndicator) {
+      updateTrialIndicator = function () {
+        const result = originalUpdateTrialIndicator.apply(this, arguments);
+        refreshCompactUi();
+        return result;
+      };
+    }
+
+    const originalRenderApp = typeof renderApp === 'function' ? renderApp : null;
+    if (originalRenderApp) {
+      renderApp = function () {
+        const result = originalRenderApp.apply(this, arguments);
+        refreshCompactUi();
+        return result;
+      };
+    }
+
+    const originalSetStatus = typeof setStatus === 'function' ? setStatus : null;
+    if (originalSetStatus) {
+      setStatus = function () {
+        const result = originalSetStatus.apply(this, arguments);
+        refreshCompactUi();
+        return result;
+      };
+    }
+
+    window.addEventListener('online', refreshCompactUi);
+    window.addEventListener('offline', refreshCompactUi);
+    document.addEventListener('visibilitychange', refreshCompactUi);
+
+    setInterval(refreshCompactUi, 1200);
+    refreshCompactUi();
+  });
+})();
+</script>
+
+
+</body>
+</html>
