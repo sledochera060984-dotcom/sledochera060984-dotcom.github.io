@@ -658,6 +658,7 @@
       outline: none;
     }
 
+
     .fav-list-pair {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -798,6 +799,7 @@
     body.dict-searching #list .actions { margin-top: 8px; gap: 6px; }
     body.dict-searching #list .actions .btn { min-height: 34px; padding: 7px 8px; font-size: 12px; }
 
+
     .home-guide {
       margin: 2px 0 10px;
       border: 1px solid #e2e8f0;
@@ -872,6 +874,7 @@
     body.dict-searching .support-box {
       display: none !important;
     }
+
 
     .toast {
       display: none;
@@ -1082,6 +1085,8 @@
 body.dict-searching .reading-box {
   display: none !important;
 }
+
+
 
 /* Restore compact logged-in header */
 body.logged-in-compact .auth-row,
@@ -1423,6 +1428,8 @@ body.dict-searching .reading-box {
     updateCompactLoginUi();
   }
 
+
+
   function updateCompactLoginUi() {
     const logged = !!user;
     document.body.classList.toggle('logged-in-compact', logged);
@@ -1443,6 +1450,7 @@ body.dict-searching .reading-box {
       if (el) el.value = '';
     });
   }
+
 
   function getFavoriteColorClass(f) {
     const color = String(f?.markColor || '').trim();
@@ -1909,23 +1917,19 @@ body.dict-searching .reading-box {
     return stems;
   }
 
-
-  // ==========================================
-  // ОРИГИНАЛЬНАЯ ЛОГИКА ОЗВУЧКИ (ИЗ ВАШЕГО ФАЙЛА)
-  // ==========================================
+  let currentTtsAudio = null;
   let ttsUnlocked = false;
   let cachedArabicVoice = null;
-  let fallbackAudio = null;
 
   function stopTtsPlayback() {
     try { window.speechSynthesis.cancel(); } catch (_) {}
-    if (fallbackAudio) {
-      try {
-        fallbackAudio.pause();
-        fallbackAudio.src = '';
-      } catch (_) {}
-      fallbackAudio = null;
-    }
+    try {
+      if (currentTtsAudio) {
+        currentTtsAudio.pause();
+        currentTtsAudio.currentTime = 0;
+      }
+    } catch (_) {}
+    currentTtsAudio = null;
   }
 
   function getArabicVoice() {
@@ -1944,18 +1948,11 @@ body.dict-searching .reading-box {
   function unlockTts() {
     if (ttsUnlocked) return;
     ttsUnlocked = true;
-    try {
-      if (window.speechSynthesis.state === 'paused') {
-        window.speechSynthesis.resume();
-      }
-      const utterance = new SpeechSynthesisUtterance('');
-      utterance.volume = 0;
-      window.speechSynthesis.speak(utterance);
-    } catch (_) {}
+    try { window.speechSynthesis.resume(); } catch (_) {}
   }
 
-  document.addEventListener('click', unlockTts, { passive: true, once: true });
-  document.addEventListener('touchstart', unlockTts, { passive: true, once: true });
+  document.addEventListener('click', unlockTts, { passive: true });
+  document.addEventListener('touchstart', unlockTts, { passive: true });
 
   try {
     if ('speechSynthesis' in window) {
@@ -1968,20 +1965,47 @@ body.dict-searching .reading-box {
 
   function isAndroidChrome() {
     const ua = navigator.userAgent || '';
-    return /Android/i.test(ua) && /Chrome/i.test(ua) && !/Edge|Edg/i.test(ua);
+    return /Android/i.test(ua) && /Chrome|CriOS/i.test(ua) && !/EdgA|SamsungBrowser|OPR/i.test(ua);
   }
 
   function playGoogleTtsFallback(text) {
-    stopTtsPlayback();
-    const encoded = encodeURIComponent(text);
-    const url = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ar&q=' + encoded;
-    fallbackAudio = new Audio(url);
-    const playPromise = fallbackAudio.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(err => {
-        console.error('Fallback audio play error:', err);
-        showMsg('Ошибка воспроизведения аудио');
-      });
+    try {
+      const cleanText = String(text || '').trim();
+      if (!cleanText) {
+        showMsg('Нет текста для озвучки');
+        return;
+      }
+
+      stopTtsPlayback();
+
+      const encoded = encodeURIComponent(cleanText);
+      const url = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ar&q=' + encoded;
+
+      const audio = new Audio();
+      currentTtsAudio = audio;
+      audio.preload = 'auto';
+      audio.src = url;
+
+      audio.onended = function() {
+        if (currentTtsAudio === audio) currentTtsAudio = null;
+      };
+
+      audio.onerror = function() {
+        if (currentTtsAudio === audio) currentTtsAudio = null;
+        showMsg('Озвучка недоступна');
+      };
+
+      const playPromise = audio.play();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(function(err) {
+          console.error('Audio play error:', err);
+          if (currentTtsAudio === audio) currentTtsAudio = null;
+          showMsg('Озвучка не запустилась');
+        });
+      }
+    } catch (e) {
+      console.error('Google TTS fallback error:', e);
+      showMsg('Озвучка недоступна');
     }
   }
 
@@ -2003,11 +2027,7 @@ body.dict-searching .reading-box {
       return;
     }
 
-    const hasSpeechApi =
-      typeof window !== 'undefined' &&
-      'speechSynthesis' in window &&
-      typeof SpeechSynthesisUtterance !== 'undefined';
-
+    const hasSpeechApi = typeof window !== 'undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
     if (!hasSpeechApi) {
       playGoogleTtsFallback(cleanText);
       return;
@@ -2027,7 +2047,7 @@ body.dict-searching .reading-box {
 
       utterance.onerror = function(err) {
         console.error('Speech synthesis error:', err);
-        playGoogleTtsFallback(cleanText);
+        showMsg('Системная озвучка недоступна');
       };
 
       window.speechSynthesis.cancel();
@@ -2037,8 +2057,6 @@ body.dict-searching .reading-box {
       playGoogleTtsFallback(cleanText);
     }
   }
-  // ==========================================
-
 
   function getFavoriteByWord(w) {
     const id = makeFavId(w.ar, w.ru);
@@ -2716,7 +2734,8 @@ body.dict-searching .reading-box {
           { ar: 'بَعْدَ الِاجْتِمَاعِ', ru: 'после встречи' },
           { ar: 'دُونَ تَقْدِيمِ', ru: 'не предоставив' },
           { ar: 'تَفَاصِيلَ إِضَافِيَّةٍ', ru: 'дополнительных деталей' },
-          { ar: 'عَنْ تَوْقِيتِ الِاجْتِمَاعِ', ru: 'или её повестке' }
+          { ar: 'عَنْ تَوْقِيتِ الِاجْتِمَاعِ', ru: 'о времени встречи' },
+          { ar: 'أَوْ جَدْوَلِ أَعْمَالِهِ', ru: 'или её повестке' }
         ]
       ]
     },
@@ -4157,6 +4176,3 @@ body.dict-searching .reading-box {
 
 </body>
 </html>
-
-
-
