@@ -312,17 +312,20 @@
     if (notify) safeShowMsg('Размер текста: ' + getFontStepLabel(nextStep));
   }
 
+  function isDictionaryHomeVisible() {
+    var dictTab = document.getElementById('tabDict');
+    var dictSection = document.getElementById('dictSection');
+    var queryInput = document.getElementById('queryInput');
+    var query = String((queryInput || {}).value || '').trim();
+    var dictTabActive = !!(dictTab && dictTab.classList.contains('active'));
+    var dictSectionVisible = !!(dictSection && dictSection.style.display !== 'none');
+    return dictTabActive && dictSectionVisible && !query;
+  }
+
   function updateFontBarVisibility() {
     ensureFontControls();
     if (!fontBarEl) return;
-
-    var activeTab = '';
-    try { activeTab = String(window.activeTab || ''); } catch (_) { activeTab = ''; }
-    var query = '';
-    try { query = String((document.getElementById('queryInput') || {}).value || '').trim(); } catch (_) { query = ''; }
-
-    var shouldShow = activeTab === 'dict' && !query;
-    fontBarEl.classList.toggle('show', shouldShow);
+    fontBarEl.classList.toggle('show', isDictionaryHomeVisible());
   }
 
   function installFontAccessibility() {
@@ -349,6 +352,12 @@
         return result;
       };
     }
+
+    window.addEventListener('pageshow', updateFontBarVisibility);
+    window.addEventListener('load', updateFontBarVisibility);
+    document.addEventListener('visibilitychange', updateFontBarVisibility);
+    setTimeout(updateFontBarVisibility, 200);
+    setTimeout(updateFontBarVisibility, 1000);
   }
 
   function install() {
