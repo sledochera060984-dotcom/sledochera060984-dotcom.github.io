@@ -1,4 +1,4 @@
-const CACHE_NAME = 'arabrus-cache-v5';
+const CACHE_NAME = 'arabrus-cache-v6';
 const APP_SHELL = [
   './',
   './index.html',
@@ -6,6 +6,7 @@ const APP_SHELL = [
   './manifest.json',
   './base.js',
   './verbs.js',
+  './tts-enhancer.js',
   './icon.png',
   './icons/192x192.png',
   './icons/512x512.png',
@@ -14,6 +15,32 @@ const APP_SHELL = [
 
 function isSameOrigin(url) {
   return url.origin === self.location.origin;
+}
+
+async function injectTtsEnhancer(response) {
+  if (!response) return response;
+
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('text/html')) return response;
+
+  const originalText = await response.text();
+  if (originalText.includes('tts-enhancer.js')) {
+    return new Response(originalText, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers
+    });
+  }
+
+  const injectedText = originalText.includes('</body>')
+    ? originalText.replace('</body>', '<script src="/tts-enhancer.js"></script></body>')
+    : originalText + '<script src="/tts-enhancer.js"></script>';
+
+  return new Response(injectedText, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers
+  });
 }
 
 self.addEventListener('install', (event) => {
@@ -53,9 +80,12 @@ async function networkFirstPage(request) {
     if (response && response.ok) {
       cache.put('./index.html', response.clone()).catch(() => {});
     }
-    return response;
+    return injectTtsEnhancer(response);
   } catch (_) {
-    return (await cache.match('./index.html')) || (await cache.match('./offline.html'));
+    const cachedIndex = await cache.match('./index.html');
+    if (cachedIndex) return injectTtsEnhancer(cachedIndex);
+    const offlinePage = await cache.match('./offline.html');
+    return injectTtsEnhancer(offlinePage);
   }
 }
 
