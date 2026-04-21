@@ -1,4 +1,4 @@
-const CACHE_NAME = 'arabrus-cache-v9';
+const CACHE_NAME = 'arabrus-cache-v10';
 const APP_SHELL = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const APP_SHELL = [
   './base.js',
   './verbs.js',
   './tts-enhancer.js',
+  './offline-notes.js',
   './icon.png',
   './icons/192x192.png',
   './icons/512x512.png',
@@ -17,14 +18,16 @@ function isSameOrigin(url) {
   return url.origin === self.location.origin;
 }
 
-async function injectTtsEnhancer(response) {
+async function injectClientScripts(response) {
   if (!response) return response;
 
   const contentType = response.headers.get('content-type') || '';
   if (!contentType.includes('text/html')) return response;
 
   const originalText = await response.text();
-  if (originalText.includes('tts-enhancer.js')) {
+  const injectBlock = '<script src="/tts-enhancer.js"></script><script src="/offline-notes.js"></script>';
+
+  if (originalText.includes('offline-notes.js')) {
     return new Response(originalText, {
       status: response.status,
       statusText: response.statusText,
@@ -33,8 +36,8 @@ async function injectTtsEnhancer(response) {
   }
 
   const injectedText = originalText.includes('</body>')
-    ? originalText.replace('</body>', '<script src="/tts-enhancer.js"></script></body>')
-    : originalText + '<script src="/tts-enhancer.js"></script>';
+    ? originalText.replace('</body>', injectBlock + '</body>')
+    : originalText + injectBlock;
 
   return new Response(injectedText, {
     status: response.status,
@@ -80,12 +83,12 @@ async function networkFirstPage(request) {
     if (response && response.ok) {
       cache.put('./index.html', response.clone()).catch(() => {});
     }
-    return injectTtsEnhancer(response);
+    return injectClientScripts(response);
   } catch (_) {
     const cachedIndex = await cache.match('./index.html');
-    if (cachedIndex) return injectTtsEnhancer(cachedIndex);
+    if (cachedIndex) return injectClientScripts(cachedIndex);
     const offlinePage = await cache.match('./offline.html');
-    return injectTtsEnhancer(offlinePage);
+    return injectClientScripts(offlinePage);
   }
 }
 
