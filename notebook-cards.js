@@ -98,6 +98,8 @@
     var style = document.createElement('style');
     style.id = 'arabrusNotebookCardsStyle';
     style.textContent = [
+      '.note-card-press-target{touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}',
+      '.note-card-press-target .btn,.note-card-press-target input,.note-card-press-target textarea,.note-card-press-target select,.note-card-press-target label{-webkit-user-select:none;user-select:none}',
       '.note-card-folder{margin-top:8px;text-align:center;color:#64748b;font-size:12px;font-weight:700;line-height:1.35}',
       '.note-card-back-main{margin:auto 0 8px;text-align:center;direction:rtl;color:var(--primary);font-size:30px;font-weight:800;line-height:1.2;white-space:pre-wrap;word-break:break-word}',
       '.note-card-actions{width:100%;margin-top:14px}',
@@ -188,10 +190,10 @@
         : '';
       var folderButton = (isSpecificFolder || n.collection)
         ? '<button type="button" class="btn warn" onclick="event.stopPropagation(); removeNoteFromFolder(\'' + j(n.id) + '\')">📂</button>'
-        : '<button type="button" class="btn" onclick="event.stopPropagation(); openFolderModal(\'note\', \'" + j(n.id) + "\', \'Укажите папку для записи\')">📁</button>';
+        : '<button type="button" class="btn" onclick="event.stopPropagation(); openFolderModal(\'note\', \' + "'" + j(n.id) + "'" + ', \'Укажите папку для записи\')">📁</button>';
 
       return '' +
-        '<div class="card-item" onclick="return handleNoteCardPress(\'' + j(actionMode) + '\', \'" + j(n.id) + "\', this, event)">' +
+        '<div class="card-item note-card-press-target" onclick="return handleNoteCardPress(\'' + j(actionMode) + '\', \'" + j(n.id) + "\', this, event)">' +
           (noteSelectionModeValue ? '<input class="card-checkbox" type="checkbox" ' + (checked ? 'checked' : '') + ' onchange="event.stopPropagation(); toggleNoteSelected(\'' + j(n.id) + '\')">' : '') +
           '<div class="card-inner">' +
             '<div class="card-face">' +
