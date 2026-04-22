@@ -230,6 +230,29 @@
     }
   }
 
+  function getTrialDaysLeft(trial) {
+    try {
+      if (!trial || typeof trial !== 'object') return null;
+
+      var directKeys = ['daysLeft', 'remainingDays', 'daysRemaining', 'leftDays', 'remainDays', 'days'];
+      for (var i = 0; i < directKeys.length; i += 1) {
+        var directValue = Number(trial[directKeys[i]]);
+        if (Number.isFinite(directValue) && directValue >= 0) {
+          return Math.max(0, Math.ceil(directValue));
+        }
+      }
+
+      var endKeys = ['endAt', 'endMs', 'endsAt', 'endsAtMs', 'expiresAt', 'expiresAtMs', 'trialEnd', 'trialEndMs', 'until', 'untilMs'];
+      for (var jIndex = 0; jIndex < endKeys.length; jIndex += 1) {
+        var endValue = Number(trial[endKeys[jIndex]]);
+        if (Number.isFinite(endValue) && endValue > 0) {
+          return Math.max(0, Math.ceil((endValue - Date.now()) / 86400000));
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
   function applyAccessCopy() {
     var mainEl = document.getElementById('compactAuthAccessMain');
     var subEl = document.getElementById('compactAuthAccessSub');
@@ -269,8 +292,11 @@
       if (typeof getTrialInfoFn === 'function') {
         var trial = getTrialInfoFn();
         if (trial && trial.active) {
+          var daysLeft = getTrialDaysLeft(trial);
           mainEl.textContent = 'Пробный период активен';
-          subEl.textContent = 'Премиум — 100 ₽ в месяц. Для подключения позже нажмите на алмаз 💎.';
+          subEl.textContent = daysLeft !== null
+            ? 'Осталось дней: ' + daysLeft + ' · Premium — 100 ₽ в месяц'
+            : 'Премиум — 100 ₽ в месяц. Для подключения позже нажмите на алмаз 💎.';
           return;
         }
       }
