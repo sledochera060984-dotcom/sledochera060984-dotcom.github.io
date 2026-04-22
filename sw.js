@@ -1,4 +1,4 @@
-const CACHE_NAME = 'arabrus-cache-v10';
+const CACHE_NAME = 'arabrus-cache-v11';
 const APP_SHELL = [
   './',
   './index.html',
@@ -6,6 +6,7 @@ const APP_SHELL = [
   './manifest.json',
   './base.js',
   './verbs.js',
+  './notebook-cards.js',
   './tts-enhancer.js',
   './offline-notes.js',
   './icon.png',
