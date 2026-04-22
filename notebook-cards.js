@@ -3,6 +3,8 @@
   window.__arabrusNotebookCardsInstalled = true;
 
   var NOTE_VIEW_MODE_KEY = 'arabrus_note_view_mode';
+  var wrapTimer = null;
+  var wrapAttempts = 0;
 
   function readMode() {
     try {
@@ -76,16 +78,16 @@
     var btn = ensureButton();
     if (!btn) return;
     btn.textContent = window.noteViewMode === 'cards' ? '📄 Режим списка' : '🎴 Режим карточек';
-    var show = activeTab === 'notes' && !!user && !(typeof isPremiumLocked === 'function' && isPremiumLocked());
+    var show = typeof activeTab !== 'undefined' && activeTab === 'notes' && !!window.user && !(typeof isPremiumLocked === 'function' && isPremiumLocked());
     btn.style.display = show ? '' : 'none';
   }
 
   function getItems() {
-    var items = Array.isArray(notes) ? notes.slice() : [];
+    var items = Array.isArray(window.notes) ? window.notes.slice() : [];
     var noteQuery = String(((document.getElementById('noteSearchInput') || {}).value) || '').trim().toLowerCase();
-    var isSpecificFolder = activeCollection !== 'Все';
+    var isSpecificFolder = window.activeCollection !== 'Все';
 
-    if (isSpecificFolder) items = items.filter(function (n) { return String(n.collection || '') === activeCollection; });
+    if (isSpecificFolder) items = items.filter(function (n) { return String(n.collection || '') === window.activeCollection; });
     if (noteQuery) {
       items = items.filter(function (n) {
         return String(n.ru || '').toLowerCase().includes(noteQuery)
@@ -103,14 +105,14 @@
   window.toggleNoteViewMode = function () {
     window.noteViewMode = window.noteViewMode === 'cards' ? 'list' : 'cards';
     saveMode(window.noteViewMode);
-    if (typeof renderApp === 'function') renderApp();
+    if (typeof window.renderApp === 'function') window.renderApp();
   };
 
   window.handleNoteCardPress = function (action, id, el, event) {
     if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
     if (event && event.target && event.target.closest('button, input, select, textarea, label, a')) return false;
     if (action === 'select') {
-      toggleNoteSelected(id);
+      window.toggleNoteSelected(id);
       return false;
     }
     if (action === 'flip' && el) {
@@ -121,17 +123,17 @@
   };
 
   function renderCards(items) {
-    var isSpecificFolder = activeCollection !== 'Все';
+    var isSpecificFolder = window.activeCollection !== 'Все';
     return '<div class="cards-grid">' + items.map(function (n) {
-      var actionMode = noteSelectionMode ? 'select' : 'flip';
-      var checked = !!(selectedNoteIds && selectedNoteIds.has(n.id));
+      var actionMode = window.noteSelectionMode ? 'select' : 'flip';
+      var checked = !!(window.selectedNoteIds && window.selectedNoteIds.has(n.id));
       var folderButton = (isSpecificFolder || n.collection)
         ? '<button type="button" class="btn warn" onclick="event.stopPropagation(); removeNoteFromFolder(\'' + j(n.id) + '\')">📂</button>'
         : '<button type="button" class="btn" onclick="event.stopPropagation(); openFolderModal(\'note\', \'" + j(n.id) + "\', \'Укажите папку для записи\')">📁</button>';
 
       return '' +
         '<div class="card-item" onclick="return handleNoteCardPress(\'' + j(actionMode) + '\', \'" + j(n.id) + "\', this, event)">' +
-          (noteSelectionMode ? '<input class="card-checkbox" type="checkbox" ' + (checked ? 'checked' : '') + ' onchange="event.stopPropagation(); toggleNoteSelected(\'' + j(n.id) + '\')">' : '') +
+          (window.noteSelectionMode ? '<input class="card-checkbox" type="checkbox" ' + (checked ? 'checked' : '') + ' onchange="event.stopPropagation(); toggleNoteSelected(\'' + j(n.id) + '\')">' : '') +
           '<div class="card-inner">' +
             '<div class="card-face">' +
               '<div class="note-card-front-ru">' + h(n.ru || '') + '</div>' +
@@ -155,33 +157,71 @@
     }).join('') + '</div>';
   }
 
-  var originalRenderNotes = typeof renderNotes === 'function' ? renderNotes : null;
-  if (originalRenderNotes) {
-    renderNotes = function () {
-      if (!user) return '<div class="empty">Войдите через Google, чтобы использовать блокнот</div>';
-      if (typeof isPremiumLocked === 'function' && isPremiumLocked()) return renderLockedFeature('Блокнот');
-      var items = getItems();
-      if (!items.length) return '<div class="empty">В блокноте пока пусто</div>';
-      if (window.noteViewMode !== 'cards') return originalRenderNotes.apply(this, arguments);
-      return renderCards(items);
-    };
+  function wrapRuntime() {
+    var changed = false;
+
+    if (!window.__arabrusNotebookCardsRenderWrapped && typeof window.renderNotes === 'function') {
+      var originalRenderNotes = window.renderNotes;
+      window.renderNotes = function () {
+        if (!window.user) return '<div class="empty">Войдите через Google, чтобы использовать блокнот</div>';
+        if (typeof isPremiumLocked === 'function' && isPremiumLocked()) return renderLockedFeature('Блокнот');
+        var items = getItems();
+        if (!items.length) return '<div class="empty">В блокноте пока пусто</div>';
+        if (window.noteViewMode !== 'cards') return originalRenderNotes.apply(this, arguments);
+        return renderCards(items);
+      };
+      window.__arabrusNotebookCardsRenderWrapped = true;
+      changed = true;
+    }
+
+    if (!window.__arabrusNotebookCardsAppWrapped && typeof window.renderApp === 'function') {
+      var originalRenderApp = window.renderApp;
+      window.renderApp = function () {
+        var result = originalRenderApp.apply(this, arguments);
+        updateButton();
+        return result;
+      };
+      window.__arabrusNotebookCardsAppWrapped = true;
+      changed = true;
+    }
+
+    updateButton();
+
+    if (window.__arabrusNotebookCardsRenderWrapped && window.__arabrusNotebookCardsAppWrapped && wrapTimer) {
+      clearInterval(wrapTimer);
+      wrapTimer = null;
+      if (typeof window.renderApp === 'function') {
+        try { window.renderApp(); } catch (_) {}
+      }
+    }
+
+    return changed;
   }
 
-  var originalRenderApp = typeof renderApp === 'function' ? renderApp : null;
-  if (originalRenderApp) {
-    renderApp = function () {
-      var result = originalRenderApp.apply(this, arguments);
-      updateButton();
-      return result;
-    };
-  }
-
-  function install() {
+  function startWrapWatcher() {
     injectStyles();
     ensureButton();
     updateButton();
+    wrapRuntime();
+
+    if (window.__arabrusNotebookCardsRenderWrapped && window.__arabrusNotebookCardsAppWrapped) return;
+    if (wrapTimer) return;
+
+    wrapTimer = setInterval(function () {
+      wrapAttempts += 1;
+      wrapRuntime();
+      if (wrapAttempts > 200 && wrapTimer) {
+        clearInterval(wrapTimer);
+        wrapTimer = null;
+      }
+    }, 50);
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once: true });
-  else install();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startWrapWatcher, { once: true });
+  } else {
+    startWrapWatcher();
+  }
+
+  window.addEventListener('load', wrapRuntime);
 })();
