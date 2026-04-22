@@ -216,6 +216,70 @@
     }).join('') + '</div>';
   }
 
+  function formatDate(ms) {
+    try {
+      if (!ms) return '';
+      var d = new Date(ms);
+      if (Number.isNaN(d.getTime())) return '';
+      var day = String(d.getDate()).padStart(2, '0');
+      var month = String(d.getMonth() + 1).padStart(2, '0');
+      var year = d.getFullYear();
+      return day + '.' + month + '.' + year;
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function applyAccessCopy() {
+    var mainEl = document.getElementById('compactAuthAccessMain');
+    var subEl = document.getElementById('compactAuthAccessSub');
+    var btnEl = document.getElementById('compactAuthAccessBtn');
+    if (!mainEl || !subEl) return;
+
+    if (btnEl) btnEl.textContent = '💎 Premium';
+
+    var user = getVar('user');
+    var hasPaid = false;
+    var getTrialInfoFn = getFn('getTrialInfo');
+    var hasPaidAccessFn = getFn('hasPaidAccess');
+    var userAccess = getVar('userAccess') || {};
+
+    try {
+      hasPaid = typeof hasPaidAccessFn === 'function' ? !!hasPaidAccessFn() : false;
+    } catch (_) {
+      hasPaid = false;
+    }
+
+    if (!user) {
+      mainEl.textContent = 'Премиум — 100 ₽ в месяц';
+      subEl.textContent = 'Войдите в Google, затем нажмите на алмаз 💎, чтобы подключить доступ.';
+      return;
+    }
+
+    if (hasPaid) {
+      var until = formatDate(Number(userAccess.premiumUntilMs || 0));
+      mainEl.textContent = 'Премиум активен';
+      subEl.textContent = until
+        ? '100 ₽ в месяц · доступ до ' + until
+        : '100 ₽ в месяц · полный доступ включён';
+      return;
+    }
+
+    try {
+      if (typeof getTrialInfoFn === 'function') {
+        var trial = getTrialInfoFn();
+        if (trial && trial.active) {
+          mainEl.textContent = 'Пробный период активен';
+          subEl.textContent = 'Премиум — 100 ₽ в месяц. Для подключения позже нажмите на алмаз 💎.';
+          return;
+        }
+      }
+    } catch (_) {}
+
+    mainEl.textContent = 'Премиум — 100 ₽ в месяц';
+    subEl.textContent = 'Чтобы подключить доступ, нажмите на алмаз 💎.';
+  }
+
   function wrapRuntime() {
     var changed = false;
     var renderNotes = getFn('renderNotes');
@@ -242,6 +306,7 @@
       setFn('renderApp', function () {
         var result = renderApp.apply(this, arguments);
         updateButton();
+        applyAccessCopy();
         return result;
       });
       window.__arabrusNotebookCardsAppWrapped = true;
@@ -249,6 +314,7 @@
     }
 
     updateButton();
+    applyAccessCopy();
 
     if (window.__arabrusNotebookCardsRenderWrapped && window.__arabrusNotebookCardsAppWrapped && watchTimer) {
       clearInterval(watchTimer);
@@ -267,6 +333,10 @@
     ensureButton();
     updateButton();
     wrapRuntime();
+
+    if (!window.__arabrusAccessCopyTimer) {
+      window.__arabrusAccessCopyTimer = setInterval(applyAccessCopy, 1200);
+    }
 
     if (window.__arabrusNotebookCardsRenderWrapped && window.__arabrusNotebookCardsAppWrapped) return;
     if (watchTimer) return;
