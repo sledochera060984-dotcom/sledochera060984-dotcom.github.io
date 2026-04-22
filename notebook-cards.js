@@ -78,7 +78,7 @@
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
-      .replace(/\"/g, '&quot;')
+      .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
   }
 
@@ -190,29 +190,30 @@
         : '';
       var folderButton = (isSpecificFolder || n.collection)
         ? '<button type="button" class="btn warn" onclick="event.stopPropagation(); removeNoteFromFolder(\'' + j(n.id) + '\')">📂</button>'
-        : '<button type="button" class="btn" onclick="event.stopPropagation(); openFolderModal(\'note\', \' + "'" + j(n.id) + "'" + ', \'Укажите папку для записи\')">📁</button>';
+        : '<button type="button" class="btn" onclick="event.stopPropagation(); openFolderModal(\'note\', \' + j(n.id) + '\', \'Укажите папку для записи\')">📁</button>';
 
-      return '' +
-        '<div class="card-item note-card-press-target" onclick="return handleNoteCardPress(\'' + j(actionMode) + '\', \'" + j(n.id) + "\', this, event)">' +
-          (noteSelectionModeValue ? '<input class="card-checkbox" type="checkbox" ' + (checked ? 'checked' : '') + ' onchange="event.stopPropagation(); toggleNoteSelected(\'' + j(n.id) + '\')">' : '') +
-          '<div class="card-inner">' +
-            '<div class="card-face">' +
-              '<div class="card-front-text">' + h(n.ru || '') + '</div>' +
-              folderHint +
-              '<div class="card-hint">коснись, чтобы перевернуть</div>' +
-            '</div>' +
-            '<div class="card-face card-back">' +
-              '<div class="note-card-back-main">' + h(n.ar || '') + '</div>' +
-              folderHint +
-              '<div class="actions note-card-actions">' +
-                '<button type="button" class="btn" onclick="event.stopPropagation(); speak(\'' + j(n.ar || '') + '\', event)">🔊</button>' +
-                '<button type="button" class="btn" onclick="event.stopPropagation(); openNoteEditModal(\'' + j(n.id) + '\')">✏️</button>' +
-                folderButton +
-                '<button type="button" class="btn danger" onclick="event.stopPropagation(); removeNote(\'' + j(n.id) + '\')">🗑</button>' +
-              '</div>' +
-            '</div>' +
-          '</div>' +
-        '</div>';
+      return `
+        <div class="card-item note-card-press-target" onclick="return handleNoteCardPress('${j(actionMode)}', '${j(n.id)}', this, event)">
+          ${noteSelectionModeValue ? `<input class="card-checkbox" type="checkbox" ${checked ? 'checked' : ''} onchange="event.stopPropagation(); toggleNoteSelected('${j(n.id)}')">` : ''}
+          <div class="card-inner">
+            <div class="card-face">
+              <div class="card-front-text">${h(n.ru || '')}</div>
+              ${folderHint}
+              <div class="card-hint">коснись, чтобы перевернуть</div>
+            </div>
+            <div class="card-face card-back">
+              <div class="note-card-back-main">${h(n.ar || '')}</div>
+              ${folderHint}
+              <div class="actions note-card-actions">
+                <button type="button" class="btn" onclick="event.stopPropagation(); speak('${j(n.ar || '')}', event)">🔊</button>
+                <button type="button" class="btn" onclick="event.stopPropagation(); openNoteEditModal('${j(n.id)}')">✏️</button>
+                ${folderButton}
+                <button type="button" class="btn danger" onclick="event.stopPropagation(); removeNote('${j(n.id)}')">🗑</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
     }).join('') + '</div>';
   }
 
