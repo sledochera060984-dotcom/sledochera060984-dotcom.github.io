@@ -4019,7 +4019,7 @@ body.dict-searching .reading-box {
         localStorage.setItem('arabrus_logged_in', logged ? '1' : '0');
       } catch (_) {}
 
-      if (compactBar) compactBar.style.display = 'flex';
+      if (compactBar) compactBar.style.display = logged ? 'flex' : 'none';
       if (authRow) authRow.style.display = logged ? 'none' : 'flex';
       if (userLine) userLine.style.display = logged ? 'none' : '';
 
