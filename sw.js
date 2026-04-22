@@ -1,4 +1,4 @@
-const CACHE_NAME = 'arabrus-cache-v16';
+const CACHE_NAME = 'arabrus-cache-v17';
 const APP_SHELL = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const APP_SHELL = [
   './base.js',
   './verbs.js',
   './notebook-cards.js',
+  './premium-access-copy.js',
   './tts-enhancer.js',
   './offline-notes.js',
   './icon.png',
@@ -26,7 +27,7 @@ async function injectClientScripts(response) {
   if (!contentType.includes('text/html')) return response;
 
   const originalText = await response.text();
-  const injectBlock = '<script src="/tts-enhancer.js"></script><script src="/offline-notes.js"></script>';
+  const injectBlock = '<script src="/tts-enhancer.js"></script><script src="/offline-notes.js"></script><script src="/premium-access-copy.js"></script>';
 
   if (originalText.includes('offline-notes.js')) {
     return new Response(originalText, {
