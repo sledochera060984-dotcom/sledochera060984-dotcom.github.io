@@ -3884,7 +3884,7 @@ body.dict-searching .reading-box {
           </div>
 
           <div class="compact-auth-actions">
-            <button id="compactAuthAccessBtn" class="btn primary" type="button">💎 Доступ</button>
+            <button id="compactAuthAccessBtn" class="btn primary" type="button">💎 Premium</button>
             <button id="compactAuthSupportBtn" class="btn" type="button">✉️ Техподдержка</button>
             <button id="compactAuthLogoutBtn" class="btn danger" type="button">🚪 Выйти</button>
             <button id="compactAuthCloseBtn" class="btn" type="button">Закрыть</button>
@@ -3984,8 +3984,8 @@ body.dict-searching .reading-box {
       try {
         if (!isLoggedInNow()) {
           return {
-            main: 'Войдите в Google',
-            sub: 'После входа начнётся пробный период и включится синхронизация'
+            main: 'Premium — 100 ₽ в месяц',
+            sub: 'Войдите в Google, затем нажмите на алмаз 💎'
           };
         }
 
@@ -3996,13 +3996,13 @@ body.dict-searching .reading-box {
             const month = String(d.getMonth() + 1).padStart(2, '0');
             const year = d.getFullYear();
             return {
-              main: 'Премиум активен',
-              sub: 'Доступ до ' + day + '.' + month + '.' + year
+              main: 'Premium активен',
+              sub: '100 ₽ в месяц · доступ до ' + day + '.' + month + '.' + year
             };
           }
           return {
-            main: 'Премиум активен',
-            sub: 'Полный доступ включён'
+            main: 'Premium активен',
+            sub: '100 ₽ в месяц · полный доступ включён'
           };
         }
 
@@ -4011,24 +4011,24 @@ body.dict-searching .reading-box {
           if (trial && trial.active) {
             return {
               main: 'Пробный период активен',
-              sub: 'Осталось дней: ' + trial.daysLeft
+              sub: 'Premium — 100 ₽ в месяц. Для подключения нажмите на алмаз 💎'
             };
           }
         }
 
         return {
-          main: 'Пробный период закончился',
-          sub: 'Открой меню и нажми “Доступ”, чтобы написать тебе для активации'
+          main: 'Premium — 100 ₽ в месяц',
+          sub: 'Чтобы подключить доступ, нажмите на алмаз 💎'
         };
       } catch (_) {
         return {
-          main: 'Доступ обновляется',
-          sub: ''
+          main: 'Premium — 100 ₽ в месяц',
+          sub: 'Чтобы подключить доступ, нажмите на алмаз 💎'
         };
       }
     }
 
-    function updateVisibility() {
+    function updateVisibility() { {
       const logged = isLoggedInNow();
       document.body.classList.toggle('logged-in-compact', logged);
       try {
