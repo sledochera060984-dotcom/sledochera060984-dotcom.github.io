@@ -62,13 +62,21 @@
     var style = document.createElement('style');
     style.id = 'arabrusNotebookCardsStyle';
     style.textContent = [
-      '.note-card-press-target{touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}',
+      '.note-card-press-target{touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;min-height:240px}',
       '.note-card-press-target *{-webkit-user-select:none;user-select:none}',
-      '.note-card-folder{margin-top:8px;text-align:center;color:#64748b;font-size:12px;font-weight:700;line-height:1.35}',
-      '.note-card-back-main{margin:auto 0 8px;text-align:center;direction:rtl;color:var(--primary);font-size:30px;font-weight:800;line-height:1.2;white-space:pre-wrap;word-break:break-word}',
-      '.note-card-actions{width:100%;margin-top:14px}',
-      'body.compact-notes .note-card-back-main{font-size:24px}',
-      '@media (max-width:560px){.note-card-back-main{font-size:24px}}'
+      '.note-card-press-target .card-inner{height:240px;min-height:240px}',
+      '.note-card-press-target .card-face{overflow:hidden;gap:8px}',
+      '.note-card-front-main,.note-card-back-main-wrap{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}',
+      '.note-card-press-target .card-front-text{margin:0;text-align:center;font-size:15px;font-weight:800;line-height:1.32;color:#334155;white-space:normal;word-break:break-word;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:7}',
+      '.note-card-folder{margin-top:0;text-align:center;color:#64748b;font-size:12px;font-weight:700;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;flex:0 0 auto}',
+      '.note-card-back-main{margin:0;text-align:center;direction:rtl;color:var(--primary);font-size:28px;font-weight:800;line-height:1.22;white-space:normal;word-break:break-word;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:5}',
+      '.note-card-actions{width:100%;margin-top:0;flex:0 0 auto}',
+      '.note-card-press-target .card-hint{flex:0 0 auto}',
+      'body.compact-notes .note-card-press-target{min-height:220px}',
+      'body.compact-notes .note-card-press-target .card-inner{height:220px;min-height:220px}',
+      'body.compact-notes .note-card-press-target .card-front-text{font-size:14px;-webkit-line-clamp:6}',
+      'body.compact-notes .note-card-back-main{font-size:24px;-webkit-line-clamp:4}',
+      '@media (max-width:560px){.note-card-press-target{min-height:220px}.note-card-press-target .card-inner{height:220px;min-height:220px}.note-card-press-target .card-front-text{font-size:14px;-webkit-line-clamp:6}.note-card-back-main{font-size:24px;-webkit-line-clamp:4}}'
     ].join('');
     document.head.appendChild(style);
   }
@@ -166,30 +174,37 @@
     var isSpecificFolder = activeCollection !== 'Все';
 
     return '<div class="cards-grid">' + items.map(function (n) {
-      var id = j((n && n.id) || '');
-      var ar = h((n && n.ar) || '');
-      var ru = h((n && n.ru) || '');
+      var rawId = (n && n.id) || '';
+      var id = j(rawId);
+      var rawAr = (n && n.ar) || '';
+      var rawRu = (n && n.ru) || '';
+      var ar = h(rawAr);
+      var ru = h(rawRu);
       var collection = String((n && n.collection) || '');
-      var checked = !!(selectedNoteIds && selectedNoteIds.has && selectedNoteIds.has((n && n.id) || ''));
+      var checked = !!(selectedNoteIds && selectedNoteIds.has && selectedNoteIds.has(rawId));
       var folderHint = collection && !isSpecificFolder ? '<div class="note-card-folder">📁 ' + h(collection) + '</div>' : '';
       var folderButton = (isSpecificFolder || collection)
-        ? '<button type="button" class="btn warn" onclick="event.stopPropagation(); removeNoteFromFolder(\'' + id + '\')">📂</button>'
-        : '<button type="button" class="btn" onclick="event.stopPropagation(); openFolderModal(\'note\', \'" + id + "\', \'Укажите папку для записи\')">📁</button>';
+        ? `<button type="button" class="btn warn" onclick="event.stopPropagation(); removeNoteFromFolder('${id}')">📂</button>`
+        : `<button type="button" class="btn" onclick="event.stopPropagation(); openFolderModal('note', '${id}', 'Укажите папку для записи')">📁</button>`;
 
       return `
         <div class="card-item note-card-press-target" onclick="return handleNoteCardPress('${noteSelectionMode ? 'select' : 'flip'}', '${id}', this, event)">
           ${noteSelectionMode ? `<input class="card-checkbox" type="checkbox" ${checked ? 'checked' : ''} onchange="event.stopPropagation(); toggleNoteSelected('${id}')">` : ''}
           <div class="card-inner">
             <div class="card-face">
-              <div class="card-front-text">${ru}</div>
+              <div class="note-card-front-main">
+                <div class="card-front-text">${ru}</div>
+              </div>
               ${folderHint}
               <div class="card-hint">коснись, чтобы перевернуть</div>
             </div>
             <div class="card-face card-back">
-              <div class="note-card-back-main">${ar}</div>
+              <div class="note-card-back-main-wrap">
+                <div class="note-card-back-main">${ar}</div>
+              </div>
               ${folderHint}
               <div class="actions note-card-actions">
-                <button type="button" class="btn" onclick="event.stopPropagation(); speak('${j((n && n.ar) || '')}', event)">🔊</button>
+                <button type="button" class="btn" onclick="event.stopPropagation(); speak('${j(rawAr)}', event)">🔊</button>
                 <button type="button" class="btn" onclick="event.stopPropagation(); openNoteEditModal('${id}')">✏️</button>
                 ${folderButton}
                 <button type="button" class="btn danger" onclick="event.stopPropagation(); removeNote('${id}')">🗑</button>
