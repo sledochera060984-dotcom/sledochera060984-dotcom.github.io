@@ -1,0 +1,142 @@
+name: Build clean debug APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-debug-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: |
+          sdkmanager "platform-tools" "platforms;android-35" "platforms;android-36" "build-tools;35.0.0" "build-tools;36.0.0"
+
+      - name: Install Capacitor
+        run: |
+          npm init -y
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+
+      - name: Prepare local web assets
+        run: |
+          rm -rf www
+          mkdir -p www
+          cp index.html base.js verbs.js notebook-cards.js offline-notes.js tts-enhancer.js premium-access-copy.js trial-access-label.js manifest.json offline.html sw.js icon.png logo.png www/
+          cp -R icons www/icons
+
+      - name: Patch APK web assets safely as UTF-8
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const indexPath = 'www/index.html';
+          let html = fs.readFileSync(indexPath, 'utf8');
+          html = html.replace(
+            'Пожалуйста, войдите в аккаунт Google, чтобы слушать озвучку и сохранять слова.',
+            'Пожалуйста, войдите в аккаунт Google, чтобы сохранять слова и синхронизировать данные.'
+          );
+          const scriptTag = '<script src="tts-free-override.js"></script>';
+          if (!html.includes(scriptTag)) {
+            html = html.replace('</body>', `${scriptTag}\n</body>`);
+          }
+          fs.writeFileSync(indexPath, html, 'utf8');
+
+          fs.writeFileSync('www/tts-free-override.js', String.raw`
+          (function () {
+            function getVoices() {
+              try {
+                if (!('speechSynthesis' in window)) return [];
+                return window.speechSynthesis.getVoices() || [];
+              } catch (_) { return []; }
+            }
+            function pickArabicVoice() {
+              var voices = getVoices();
+              return voices.find(function (v) { return /^ar(-|$)/i.test(v.lang || '') && /google|arabic/i.test(v.name || ''); }) ||
+                voices.find(function (v) { return /^ar(-|$)/i.test(v.lang || ''); }) ||
+                voices.find(function (v) { return /arabic/i.test(v.name || ''); }) ||
+                null;
+            }
+            function showAudioMsg(text) {
+              try { if (typeof window.showMsg === 'function') { window.showMsg(text); return; } } catch (_) {}
+              try { console.log(text); } catch (_) {}
+            }
+            function freeSpeak(text, event) {
+              try { if (event && typeof event.stopPropagation === 'function') event.stopPropagation(); } catch (_) {}
+              var cleanText = String(text || '').trim();
+              if (!cleanText) return;
+              if (!('speechSynthesis' in window) || typeof window.SpeechSynthesisUtterance === 'undefined') {
+                showAudioMsg('Озвучка недоступна на этом устройстве');
+                return;
+              }
+              try {
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.resume();
+                var utterance = new SpeechSynthesisUtterance(cleanText);
+                utterance.lang = 'ar-SA';
+                utterance.rate = 0.9;
+                utterance.pitch = 1;
+                utterance.volume = 1;
+                var voice = pickArabicVoice();
+                if (voice) utterance.voice = voice;
+                window.speechSynthesis.speak(utterance);
+              } catch (_) {
+                showAudioMsg('Озвучка недоступна на этом устройстве');
+              }
+            }
+            function installFreeSpeak() {
+              try { window.speak = freeSpeak; } catch (_) {}
+              try { speak = freeSpeak; } catch (_) {}
+            }
+            installFreeSpeak();
+            document.addEventListener('DOMContentLoaded', installFreeSpeak);
+            window.addEventListener('load', installFreeSpeak);
+            setTimeout(installFreeSpeak, 0);
+            setTimeout(installFreeSpeak, 500);
+            setTimeout(installFreeSpeak, 1500);
+            setTimeout(installFreeSpeak, 3000);
+          })();
+          `.trim() + '\n', 'utf8');
+          NODE
+
+      - name: Create Capacitor config
+        run: |
+          cat > capacitor.config.json <<'JSON'
+          {
+            "appId": "io.github.sledochera060984_dotcom.twa",
+            "appName": "АРАБРУС",
+            "webDir": "www"
+          }
+          JSON
+
+      - name: Generate Android project
+        run: npx cap add android
+
+      - name: Build debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: arabrus-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
