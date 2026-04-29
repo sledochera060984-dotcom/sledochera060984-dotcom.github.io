@@ -1,4 +1,4 @@
-const CACHE_NAME = 'arabrus-cache-v24';
+const CACHE_NAME = 'arabrus-cache-v25';
 const APP_SHELL = [
   './',
   './index.html',
