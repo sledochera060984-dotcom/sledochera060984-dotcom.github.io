@@ -1,0 +1,1 @@
+window.ARABRUS_US_HISTORY_READING_V2=true;
