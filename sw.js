@@ -1,4 +1,4 @@
-const CACHE_NAME = 'arabrus-cache-v28';
+const CACHE_NAME = 'arabrus-cache-v29';
 const APP_SHELL = [
   './',
   './index.html',
@@ -12,6 +12,7 @@ const APP_SHELL = [
   './access-date-helper.js',
   './access-sync.js',
   './us-history-reading.js',
+  './us-history-reading-v2.js',
   './icon.png',
   './icons/192x192.png',
   './icons/512x512.png',
@@ -29,9 +30,9 @@ async function injectClientScripts(response) {
   if (!contentType.includes('text/html')) return response;
 
   const originalText = await response.text();
-  const injectBlock = '<script src="/tts-enhancer.js"></script><script src="/offline-notes.js"></script><script src="/access-date-helper.js"></script><script src="/access-sync.js"></script><script src="/us-history-reading.js"></script>';
+  const injectBlock = '<script src="/tts-enhancer.js"></script><script src="/offline-notes.js"></script><script src="/access-date-helper.js"></script><script src="/access-sync.js"></script><script src="/us-history-reading.js"></script><script src="/us-history-reading-v2.js"></script>';
 
-  if (originalText.includes('us-history-reading.js')) {
+  if (originalText.includes('us-history-reading-v2.js')) {
     return new Response(originalText, {
       status: response.status,
       statusText: response.statusText,
